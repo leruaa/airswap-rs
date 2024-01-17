@@ -1,0 +1,545 @@
+[
+   {
+      "inputs": [
+         {
+            "internalType": "contract IERC20",
+            "name": "_stakingToken",
+            "type": "address"
+         },
+         {
+            "internalType": "uint256",
+            "name": "_obligationCost",
+            "type": "uint256"
+         },
+         {
+            "internalType": "uint256",
+            "name": "_tokenCost",
+            "type": "uint256"
+         }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+   },
+   {
+      "inputs": [],
+      "name": "NoProtocolsToAdd",
+      "type": "error"
+   },
+   {
+      "inputs": [],
+      "name": "NoProtocolsToRemove",
+      "type": "error"
+   },
+   {
+      "inputs": [],
+      "name": "NoTokensToAdd",
+      "type": "error"
+   },
+   {
+      "inputs": [],
+      "name": "NoTokensToRemove",
+      "type": "error"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "bytes4",
+            "name": "",
+            "type": "bytes4"
+         }
+      ],
+      "name": "ProtocolDoesNotExist",
+      "type": "error"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "bytes4",
+            "name": "",
+            "type": "bytes4"
+         }
+      ],
+      "name": "ProtocolExists",
+      "type": "error"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+         }
+      ],
+      "name": "TokenDoesNotExist",
+      "type": "error"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+         }
+      ],
+      "name": "TokenExists",
+      "type": "error"
+   },
+   {
+      "anonymous": false,
+      "inputs": [
+         {
+            "indexed": true,
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+         },
+         {
+            "indexed": false,
+            "internalType": "bytes4[]",
+            "name": "protocols",
+            "type": "bytes4[]"
+         }
+      ],
+      "name": "AddProtocols",
+      "type": "event"
+   },
+   {
+      "anonymous": false,
+      "inputs": [
+         {
+            "indexed": true,
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+         },
+         {
+            "indexed": false,
+            "internalType": "address[]",
+            "name": "tokens",
+            "type": "address[]"
+         }
+      ],
+      "name": "AddTokens",
+      "type": "event"
+   },
+   {
+      "anonymous": false,
+      "inputs": [
+         {
+            "indexed": true,
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+         }
+      ],
+      "name": "FullUnstake",
+      "type": "event"
+   },
+   {
+      "anonymous": false,
+      "inputs": [
+         {
+            "indexed": true,
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+         }
+      ],
+      "name": "InitialStake",
+      "type": "event"
+   },
+   {
+      "anonymous": false,
+      "inputs": [
+         {
+            "indexed": true,
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+         },
+         {
+            "indexed": false,
+            "internalType": "bytes4[]",
+            "name": "protocols",
+            "type": "bytes4[]"
+         }
+      ],
+      "name": "RemoveProtocols",
+      "type": "event"
+   },
+   {
+      "anonymous": false,
+      "inputs": [
+         {
+            "indexed": true,
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+         },
+         {
+            "indexed": false,
+            "internalType": "address[]",
+            "name": "tokens",
+            "type": "address[]"
+         }
+      ],
+      "name": "RemoveTokens",
+      "type": "event"
+   },
+   {
+      "anonymous": false,
+      "inputs": [
+         {
+            "indexed": true,
+            "internalType": "address",
+            "name": "account",
+            "type": "address"
+         },
+         {
+            "indexed": false,
+            "internalType": "string",
+            "name": "url",
+            "type": "string"
+         }
+      ],
+      "name": "SetServerURL",
+      "type": "event"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "bytes4[]",
+            "name": "protocols",
+            "type": "bytes4[]"
+         }
+      ],
+      "name": "addProtocols",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address[]",
+            "name": "tokens",
+            "type": "address[]"
+         }
+      ],
+      "name": "addTokens",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "staker",
+            "type": "address"
+         }
+      ],
+      "name": "balanceOf",
+      "outputs": [
+         {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "staker",
+            "type": "address"
+         }
+      ],
+      "name": "getProtocolsForStaker",
+      "outputs": [
+         {
+            "internalType": "bytes4[]",
+            "name": "protocolList",
+            "type": "bytes4[]"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "bytes4",
+            "name": "protocol",
+            "type": "bytes4"
+         }
+      ],
+      "name": "getServerURLsForProtocol",
+      "outputs": [
+         {
+            "internalType": "string[]",
+            "name": "urls",
+            "type": "string[]"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address[]",
+            "name": "stakers",
+            "type": "address[]"
+         }
+      ],
+      "name": "getServerURLsForStakers",
+      "outputs": [
+         {
+            "internalType": "string[]",
+            "name": "urls",
+            "type": "string[]"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+         }
+      ],
+      "name": "getServerURLsForToken",
+      "outputs": [
+         {
+            "internalType": "string[]",
+            "name": "urls",
+            "type": "string[]"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "bytes4",
+            "name": "protocol",
+            "type": "bytes4"
+         }
+      ],
+      "name": "getStakersForProtocol",
+      "outputs": [
+         {
+            "internalType": "address[]",
+            "name": "stakers",
+            "type": "address[]"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+         }
+      ],
+      "name": "getStakersForToken",
+      "outputs": [
+         {
+            "internalType": "address[]",
+            "name": "stakers",
+            "type": "address[]"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "staker",
+            "type": "address"
+         }
+      ],
+      "name": "getTokensForStaker",
+      "outputs": [
+         {
+            "internalType": "address[]",
+            "name": "tokenList",
+            "type": "address[]"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [],
+      "name": "obligationCost",
+      "outputs": [
+         {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [],
+      "name": "removeAllProtocols",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+   },
+   {
+      "inputs": [],
+      "name": "removeAllTokens",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "bytes4[]",
+            "name": "protocols",
+            "type": "bytes4[]"
+         }
+      ],
+      "name": "removeProtocols",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address[]",
+            "name": "tokens",
+            "type": "address[]"
+         }
+      ],
+      "name": "removeTokens",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "string",
+            "name": "_url",
+            "type": "string"
+         }
+      ],
+      "name": "setServerURL",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+         }
+      ],
+      "name": "stakerServerURLs",
+      "outputs": [
+         {
+            "internalType": "string",
+            "name": "",
+            "type": "string"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [],
+      "name": "stakingToken",
+      "outputs": [
+         {
+            "internalType": "contract IERC20",
+            "name": "",
+            "type": "address"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "staker",
+            "type": "address"
+         },
+         {
+            "internalType": "bytes4",
+            "name": "protocol",
+            "type": "bytes4"
+         }
+      ],
+      "name": "supportsProtocol",
+      "outputs": [
+         {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [
+         {
+            "internalType": "address",
+            "name": "staker",
+            "type": "address"
+         },
+         {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+         }
+      ],
+      "name": "supportsToken",
+      "outputs": [
+         {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   },
+   {
+      "inputs": [],
+      "name": "tokenCost",
+      "outputs": [
+         {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+         }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+   }
+]
