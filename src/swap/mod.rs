@@ -1,11 +1,18 @@
 use std::sync::Arc;
 
-use alloy_primitives::Address;
+use alloy_json_rpc::{ErrorPayload, Id, Request, RequestMeta, ResponsePayload};
+use alloy_primitives::{Address, U256};
 use alloy_providers::provider::{Provider, TempProvider};
-use alloy_rpc_types::{BlockNumberOrTag, Filter};
+use alloy_pubsub::PubSubFrontend;
+use alloy_rpc_types::{
+    pubsub::{Params, SubscriptionKind},
+    BlockNumberOrTag, Filter, Log,
+};
 use alloy_sol_types::{sol, SolEvent};
 use alloy_transport::{BoxTransport, TransportError};
+use futures::{stream::BoxStream, StreamExt, TryStreamExt};
 use thiserror::Error;
+use tokio_stream::wrappers::BroadcastStream;
 
 sol!(SwapERC20Contract, "abi/swap_erc20.json");
 
@@ -33,12 +40,64 @@ pub async fn get_swap_events<B: Into<BlockNumberOrTag>>(
     Ok(events)
 }
 
+pub async fn get_swap_events_stream(
+    front_end: &PubSubFrontend,
+    swap_address: Address,
+    id: Id,
+) -> Result<BoxStream<Result<SwapERC20Contract::SwapERC20, SwapError>>, SwapError> {
+    let req = Request {
+        meta: RequestMeta {
+            method: "eth_subscribe",
+            id,
+        },
+        params: [
+            serde_json::to_value(SubscriptionKind::Logs)?,
+            serde_json::to_value(Params::Logs(Box::new(
+                Filter::new()
+                    .address(swap_address)
+                    .event_signature(SwapERC20Contract::SwapERC20::SIGNATURE_HASH),
+            )))?,
+        ],
+    };
+
+    let response = front_end
+        .send(req.serialize()?)
+        .await?
+        .deser_success::<U256>()
+        .unwrap();
+
+    let subscription_id = match response.payload {
+        ResponsePayload::Success(subscription_id) => Ok(subscription_id),
+        ResponsePayload::Failure(err) => Err(SwapError::Payload(err)),
+    }?;
+
+    let rx = front_end.get_subscription(subscription_id).await?;
+
+    let stream = BroadcastStream::new(rx)
+        .map_err(|_| SwapError::Receive)
+        .map(|r| {
+            r.and_then(|value| serde_json::from_str::<Log>(value.get()).map_err(Into::into))
+                .and_then(|log| {
+                    SwapERC20Contract::SwapERC20::decode_log_data(&log.try_into()?, true)
+                        .map_err(Into::into)
+                })
+        });
+
+    Ok(stream.boxed())
+}
+
 #[derive(Error, Debug)]
 pub enum SwapError {
+    #[error("{0}")]
+    Payload(ErrorPayload),
     #[error(transparent)]
     Transport(#[from] TransportError),
     #[error(transparent)]
     Log(#[from] alloy_rpc_types::LogError),
     #[error(transparent)]
     Sol(#[from] alloy_sol_types::Error),
+    #[error(transparent)]
+    Serde(#[from] serde_json::Error),
+    #[error("Receive error")]
+    Receive,
 }
