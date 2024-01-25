@@ -10,4 +10,4 @@ pub use registry::{
     Maker, MakerWithSupportedTokens, RegistryClient, RegistryError, RegistryVersion,
 };
 
-pub use swap::{get_swap_events, get_swap_events_stream, SwapError};
+pub use swap::{get_swap_events, get_swap_events_stream, SwapERC20Contract, SwapError};
