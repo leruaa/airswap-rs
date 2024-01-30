@@ -17,4 +17,6 @@ pub enum ResponseDecodeError {
     Remote(ErrorPayload),
     #[error("Wrong variant")]
     WrongVariant,
+    #[error("Unknown variant: {0}")]
+    UnknownVariant(String),
 }

@@ -59,6 +59,9 @@ impl Service<Payload> for MakerService {
                                 -33605 => Err(MakerError::RateLimitMet),
                                 _ => Err(ResponseDecodeError::Remote(err.error).into()),
                             },
+                            Response::Unknown(value) => {
+                                Err(ResponseDecodeError::UnknownVariant(value.to_string()).into())
+                            }
                         })
                         .unwrap_or_else(|err| Err(MakerError::from(err))),
                 ),

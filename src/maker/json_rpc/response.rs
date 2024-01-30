@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use serde_json::Value;
 
 use super::{ResponseError, ResponseResult};
 
@@ -7,4 +8,5 @@ use super::{ResponseError, ResponseResult};
 pub enum Response {
     Result(ResponseResult),
     Error(ResponseError),
+    Unknown(Value),
 }

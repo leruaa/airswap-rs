@@ -13,6 +13,7 @@ impl TryFrom<Response> for PricingPayload {
         match value {
             Response::Result(res) => res.try_into(),
             Response::Error(err) => Err(ResponseDecodeError::Remote(err.error)),
+            Response::Unknown(value) => Err(ResponseDecodeError::UnknownVariant(value.to_string())),
         }
     }
 }
