@@ -1,0 +1,24 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+erc20 = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-providers = { workspace = true }
+alloy-rpc-client = { workspace = true }
+num-traits = { workspace = true }
+ruint = { features = ["num-traits"] }
+clap = { version = "4.3.19", features = ["derive", "env"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+futures = "0.3"
+async-trait = "0.1"
+anyhow = "1.0.72"
+itertools = "0.11.0"
+cli-table = "0.4"
+dotenv = "0.15.0"
+
+airswap = { workspace = true }
