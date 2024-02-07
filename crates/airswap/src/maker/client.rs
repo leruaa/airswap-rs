@@ -5,6 +5,7 @@ use tower::{Service, ServiceExt};
 use crate::{
     build_buy_payload,
     json_rpc::{OrderParams, Pair, PricingParams, PricingPayload, ResponseResult},
+    MakerWithSupportedTokens,
 };
 
 use super::{
@@ -20,10 +21,10 @@ pub struct MakerClient {
 }
 
 impl MakerClient {
-    pub fn new(chain_id: u64, maker_url: String) -> Self {
+    pub fn new(chain_id: u64, maker: MakerWithSupportedTokens) -> Self {
         let config = MakerConfig::new(chain_id);
         Self {
-            service: RwLock::new(MakerService::new(maker_url)),
+            service: RwLock::new(MakerService::new(maker)),
             chain_id,
             config,
         }

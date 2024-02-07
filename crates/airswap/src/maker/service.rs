@@ -9,23 +9,39 @@ use futures::{future::Either, Future, TryFutureExt};
 use reqwest::Client as HttpClient;
 use tower::Service;
 
-use crate::json_rpc::{Payload, Request, Response, ResponseDecodeError, ResponseResult};
+use crate::{
+    json_rpc::{Payload, Request, Response, ResponseDecodeError, ResponseResult},
+    MakerWithSupportedTokens,
+};
 
 use super::MakerError;
 
 pub struct MakerService {
-    maker_url: String,
+    maker: MakerWithSupportedTokens,
     client: HttpClient,
 }
 
 impl MakerService {
-    pub fn new(maker_url: String) -> Self {
+    pub fn new(maker: MakerWithSupportedTokens) -> Self {
         Self {
-            maker_url,
+            maker,
             client: HttpClient::builder()
                 .timeout(Duration::from_secs(10))
                 .build()
                 .unwrap(),
+        }
+    }
+
+    pub fn can_handle(&self, payload: &Payload) -> bool {
+        match payload {
+            Payload::SignerSideOrder(params) => self
+                .maker
+                .can_handle(&[params.order.sender_token, params.order.signer_token]),
+            Payload::SenderSideOrder(params) => self
+                .maker
+                .can_handle(&[params.order.sender_token, params.order.signer_token]),
+            Payload::Pricing(_) => true,
+            Payload::AllPricing(_) => true,
         }
     }
 }
@@ -44,7 +60,7 @@ impl Service<Payload> for MakerService {
     fn call(&mut self, payload: Payload) -> Self::Future {
         let fut = self
             .client
-            .post(self.maker_url.clone())
+            .post(self.maker.url())
             .json(&Request::from(payload))
             .send()
             .map_err(Into::into)

@@ -48,10 +48,10 @@ impl Action for GetPricingAction {
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
 
         let maker = registry_client
-            .get_maker(self.maker_address.parse()?)
+            .get_maker_with_supported_tokens(self.maker_address.parse()?)
             .await?;
 
-        let maker_client = MakerClient::new(chain_id, maker.url);
+        let maker_client = MakerClient::new(chain_id, maker);
 
         let token_store = TokenStore::new(chain_id, provider);
 

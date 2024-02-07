@@ -93,7 +93,7 @@ impl Action for QuoteAction {
             let to_token = to_token.clone();
 
             tokio::spawn(async move {
-                let maker_client = MakerClient::new(chain_id, m.url());
+                let maker_client = MakerClient::new(chain_id, m.clone());
                 let quote = match amount {
                     Side::Buy(amount) => {
                         let amount = parse_units(&amount.to_string(), from_token.decimals).unwrap();
