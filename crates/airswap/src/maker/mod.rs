@@ -24,9 +24,9 @@ pub fn build_buy_payload(
         signer_amount: amount.to_string(),
         order: OrderParams {
             chain_id: chain_id.to_string(),
-            signer_token: format!("{:?}", to_token), // Token the signer would transfer
-            sender_token: format!("{:?}", from_token), // Token the sender would transfer
-            sender_wallet: format!("{:?}", from),    // Wallet of the sender
+            signer_token: to_token,   // Token the signer would transfer
+            sender_token: from_token, // Token the sender would transfer
+            sender_wallet: format!("{:?}", from), // Wallet of the sender
             swap_contract: format!("{:?}", swap_address), // Swap contract intended for use
             expiry: None,
             proxying_for: None, // Ultimate counterparty of the swap (Optional)
@@ -48,11 +48,11 @@ pub fn build_sell_payload(
         sender_amount: amount.to_string(),
         order: OrderParams {
             chain_id: chain_id.to_string(),
-            signer_token: format!("{:?}", to_token), // Token the signer would transfer
-            sender_token: format!("{:?}", from_token), // Token the sender would transfer
-            sender_wallet: format!("{:?}", from),    // Wallet of the sender
+            signer_token: to_token,   // Token the signer would transfer
+            sender_token: from_token, // Token the sender would transfer
+            sender_wallet: format!("{:?}", from), // Wallet of the sender
             swap_contract: format!("{:?}", swap_address), // Swap contract intended for use
-            expiry: None,                            // Ultimate counterparty of the swap (Optional)
+            expiry: None,             // Ultimate counterparty of the swap (Optional)
             proxying_for: None,
         },
     };

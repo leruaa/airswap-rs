@@ -61,9 +61,9 @@ impl MakerClient {
             sender_amount: amount.to_string(),
             order: OrderParams {
                 chain_id: self.chain_id.to_string(),
-                signer_token: format!("{:?}", to_token), // Token the signer would transfer
-                sender_token: format!("{:?}", from_token), // Token the sender would transfer
-                sender_wallet: format!("{:?}", from),    // Wallet of the sender
+                signer_token: to_token,   // Token the signer would transfer
+                sender_token: from_token, // Token the sender would transfer
+                sender_wallet: format!("{:?}", from), // Wallet of the sender
                 swap_contract: format!("{:?}", self.config.swap_address), // Swap contract intended for use
                 expiry: None, // Ultimate counterparty of the swap (Optional)
                 proxying_for: None,

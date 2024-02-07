@@ -1,3 +1,4 @@
+use alloy_primitives::Address;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -5,8 +6,8 @@ use serde::{Deserialize, Serialize};
 pub struct OrderParams {
     pub chain_id: String,      // ID of the chain intended for use
     pub swap_contract: String, // Swap contract intended for use
-    pub signer_token: String,  // Token the signer would transfer
-    pub sender_token: String,  // Token the sender would transfer
+    pub signer_token: Address, // Token the signer would transfer
+    pub sender_token: Address, // Token the sender would transfer
     pub sender_wallet: String, // Wallet of the sender
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>, // Requested order expiry
