@@ -23,4 +23,8 @@ impl MakerWithSupportedTokens {
     pub fn url(&self) -> String {
         self.maker.url.clone()
     }
+
+    pub fn can_handle(&self, addresses: &[Address]) -> bool {
+        addresses.iter().all(|a| self.supported_tokens.contains(a))
+    }
 }
