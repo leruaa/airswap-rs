@@ -12,7 +12,7 @@ pub static MYETH: Address = address!("143395428158a57d17bcd8899770460656de98e4")
 async fn test_registry() {
     dotenv().ok();
 
-    let eth_rpc = env::var("ETH_HTTP_RPC").unwrap();
+    let eth_rpc = env::var("ETH_RPC_URL").unwrap();
     let provider = Provider::new_with_client(
         RpcClient::builder()
             .reqwest_http(eth_rpc.parse().unwrap())
