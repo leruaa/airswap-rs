@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use alloy_primitives::Address;
 
 use crate::Maker;
@@ -26,5 +28,11 @@ impl MakerWithSupportedTokens {
 
     pub fn can_handle(&self, addresses: &[Address]) -> bool {
         addresses.iter().all(|a| self.supported_tokens.contains(a))
+    }
+}
+
+impl Display for MakerWithSupportedTokens {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.maker.fmt(f)
     }
 }
