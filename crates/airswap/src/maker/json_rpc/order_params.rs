@@ -1,7 +1,7 @@
 use alloy_primitives::Address;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OrderParams {
     pub chain_id: String,      // ID of the chain intended for use
@@ -15,7 +15,7 @@ pub struct OrderParams {
     pub proxying_for: Option<String>, // Ultimate counterparty of the swap (Optional)
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SignerSideOrderParams {
     pub sender_amount: String, // Amount the client want to sell to the maker
@@ -23,7 +23,7 @@ pub struct SignerSideOrderParams {
     pub order: OrderParams,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SenderSideOrderParams {
     pub signer_amount: String, // Amount the client want to buy from the maker
