@@ -44,6 +44,10 @@ impl MakerService {
             Payload::AllPricing(_) => true,
         }
     }
+
+    pub fn maker(&self) -> &MakerWithSupportedTokens {
+        &self.maker
+    }
 }
 
 impl Service<Payload> for MakerService {
