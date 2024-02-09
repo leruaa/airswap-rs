@@ -15,4 +15,6 @@ pub enum MakerError {
     ServerError(StatusCode),
     #[error("Rate limit met")]
     RateLimitMet,
+    #[error("The pair is not supported")]
+    PairNotSupported,
 }

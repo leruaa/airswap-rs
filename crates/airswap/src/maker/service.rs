@@ -32,7 +32,7 @@ impl MakerService {
         }
     }
 
-    pub fn can_handle(&self, payload: &Payload) -> bool {
+    fn can_handle(&self, payload: &Payload) -> bool {
         match payload {
             Payload::SignerSideOrder(params) => self
                 .maker
@@ -62,6 +62,10 @@ impl Service<Payload> for MakerService {
     }
 
     fn call(&mut self, payload: Payload) -> Self::Future {
+        if !self.can_handle(&payload) {
+            return Box::pin(ready(Err(MakerError::PairNotSupported)));
+        }
+
         let fut = self
             .client
             .post(self.maker.url())
