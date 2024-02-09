@@ -97,6 +97,7 @@ impl Service<Payload> for MakerService {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Threshold<P> {
     value: BigDecimal,
     phantom: PhantomData<P>,
