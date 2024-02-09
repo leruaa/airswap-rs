@@ -1,3 +1,4 @@
+use bigdecimal::BigDecimal;
 use reqwest::StatusCode;
 use thiserror::Error;
 
@@ -17,4 +18,6 @@ pub enum MakerError {
     RateLimitMet,
     #[error("The pair is not supported")]
     PairNotSupported,
+    #[error("The order amount of ${0} is lower than the limit")]
+    AmountTooLow(BigDecimal),
 }

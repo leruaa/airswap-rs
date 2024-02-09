@@ -32,6 +32,7 @@ dependencies = [
  "alloy-transport",
  "alloy-transport-http",
  "async-trait",
+ "bigdecimal",
  "dotenv",
  "futures",
  "once_cell",

@@ -1,13 +1,15 @@
 use std::{
     future::ready,
+    marker::PhantomData,
     pin::Pin,
     task::{Context, Poll},
     time::Duration,
 };
 
+use bigdecimal::BigDecimal;
 use futures::{future::Either, Future, TryFutureExt};
 use reqwest::Client as HttpClient;
-use tower::Service;
+use tower::{filter::Predicate, Service};
 
 use crate::{
     json_rpc::{Payload, Request, Response, ResponseDecodeError, ResponseResult},
@@ -92,5 +94,34 @@ impl Service<Payload> for MakerService {
             });
 
         Box::pin(fut)
+    }
+}
+
+pub struct Threshold<P> {
+    value: BigDecimal,
+    phantom: PhantomData<P>,
+}
+
+impl<P> Threshold<P> {
+    pub fn new(value: BigDecimal) -> Self {
+        Self {
+            value,
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<P> Predicate<(P, BigDecimal)> for Threshold<P> {
+    type Request = P;
+
+    fn check(
+        &mut self,
+        (payload, amount): (P, BigDecimal),
+    ) -> Result<Self::Request, tower::BoxError> {
+        if self.value < amount {
+            Ok(payload)
+        } else {
+            Err(Box::new(MakerError::AmountTooLow(amount)))
+        }
     }
 }

@@ -8,7 +8,7 @@ use alloy_primitives::{Address, U256};
 pub use client::MakerClient;
 pub use config::MakerConfig;
 pub use error::MakerError;
-pub use service::MakerService;
+pub use service::{MakerService, Threshold};
 
 use self::json_rpc::{OrderParams, Payload, SenderSideOrderParams, SignerSideOrderParams};
 

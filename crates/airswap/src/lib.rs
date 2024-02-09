@@ -4,7 +4,7 @@ mod swap;
 
 pub use maker::{
     build_buy_payload, build_sell_payload, json_rpc, MakerClient, MakerConfig, MakerError,
-    MakerService,
+    MakerService, Threshold,
 };
 pub use registry::{
     Maker, MakerWithSupportedTokens, RegistryClient, RegistryError, RegistryVersion,
