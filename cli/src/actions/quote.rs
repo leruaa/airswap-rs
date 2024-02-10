@@ -91,7 +91,6 @@ impl Action for QuoteAction {
             let amount = self.amount.clone();
             let from_token = from_token.clone();
             let to_token = to_token.clone();
-            let m = Arc::new(m);
 
             tokio::spawn(async move {
                 let maker_client = MakerClient::new(chain_id, m.clone());

@@ -51,7 +51,7 @@ impl Action for GetPricingAction {
             .get_maker_with_supported_tokens(self.maker_address.parse()?)
             .await?;
 
-        let maker_client = MakerClient::new(chain_id, Arc::new(maker));
+        let maker_client = MakerClient::new(chain_id, maker);
 
         let token_store = TokenStore::new(chain_id, provider);
 

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use alloy_primitives::{Address, U256};
 use tokio::sync::RwLock;
 use tower::{Service, ServiceExt};
@@ -23,7 +21,7 @@ pub struct MakerClient {
 }
 
 impl MakerClient {
-    pub fn new(chain_id: u64, maker: Arc<MakerWithSupportedTokens>) -> Self {
+    pub fn new(chain_id: u64, maker: MakerWithSupportedTokens) -> Self {
         let config = MakerConfig::new(chain_id);
         Self {
             service: RwLock::new(MakerService::new(maker)),
