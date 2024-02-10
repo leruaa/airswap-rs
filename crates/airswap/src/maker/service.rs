@@ -1,6 +1,7 @@
 use std::{
     future::ready,
     pin::Pin,
+    sync::Arc,
     task::{Context, Poll},
     time::Duration,
 };
@@ -19,12 +20,12 @@ use crate::{
 use super::MakerError;
 
 pub struct MakerService {
-    maker: MakerWithSupportedTokens,
+    maker: Arc<MakerWithSupportedTokens>,
     client: HttpClient,
 }
 
 impl MakerService {
-    pub fn new(maker: MakerWithSupportedTokens) -> Self {
+    pub fn new(maker: Arc<MakerWithSupportedTokens>) -> Self {
         Self {
             maker,
             client: HttpClient::builder()

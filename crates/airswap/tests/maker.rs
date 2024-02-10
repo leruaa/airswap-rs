@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use airswap::{Maker, MakerClient, MakerWithSupportedTokens};
 use alloy_primitives::{address, U256};
 
@@ -26,7 +28,7 @@ async fn test_maker() {
         ],
     };
 
-    let maker_client = MakerClient::new(1, maker);
+    let maker_client = MakerClient::new(1, Arc::new(maker));
     let amount = U256::from(2000000000);
 
     let payload = maker_client
