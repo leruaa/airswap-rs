@@ -1,15 +1,15 @@
 use std::{
     future::ready,
-    marker::PhantomData,
     pin::Pin,
     task::{Context, Poll},
     time::Duration,
 };
 
 use bigdecimal::BigDecimal;
-use futures::{future::Either, Future, TryFutureExt};
+use futures::{future::Either, Future, FutureExt, TryFutureExt};
 use reqwest::Client as HttpClient;
-use tower::{filter::Predicate, Service};
+use thiserror::Error;
+use tower::{Layer, Service};
 
 use crate::{
     json_rpc::{Payload, Request, Response, ResponseDecodeError, ResponseResult},
@@ -98,31 +98,59 @@ impl Service<Payload> for MakerService {
 }
 
 #[derive(Debug, Clone)]
-pub struct Threshold<P> {
+pub struct ThresholdLayer {
     value: BigDecimal,
-    phantom: PhantomData<P>,
 }
 
-impl<P> Threshold<P> {
+impl ThresholdLayer {
     pub fn new(value: BigDecimal) -> Self {
-        Self {
-            value,
-            phantom: PhantomData,
+        Self { value }
+    }
+}
+
+impl<S> Layer<S> for ThresholdLayer {
+    type Service = ThresholdService<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        ThresholdService {
+            threshold: self.value.clone(),
+            service: inner,
         }
     }
 }
 
-impl<P> Predicate<(P, BigDecimal)> for Threshold<P> {
-    type Request = P;
+#[derive(Debug, Clone)]
+pub struct ThresholdService<S> {
+    threshold: BigDecimal,
+    service: S,
+}
 
-    fn check(
-        &mut self,
-        (payload, amount): (P, BigDecimal),
-    ) -> Result<Self::Request, tower::BoxError> {
-        if self.value < amount {
-            Ok(payload)
+impl<S, Request> Service<(Request, BigDecimal)> for ThresholdService<S>
+where
+    S: Service<Request>,
+    S::Response: Send + 'static,
+    S::Error: From<BelowThresholdError> + Send + 'static,
+    S::Future: Send + 'static,
+{
+    type Response = S::Response;
+
+    type Error = S::Error;
+
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(cx)
+    }
+
+    fn call(&mut self, (req, amount): (Request, BigDecimal)) -> Self::Future {
+        if amount < self.threshold {
+            Box::pin(ready(Err(BelowThresholdError(amount).into())))
         } else {
-            Err(Box::new(MakerError::AmountTooLow(amount)))
+            self.service.call(req).boxed()
         }
     }
 }
+
+#[derive(Error, Debug)]
+#[error("The order amount of {0} is lower than the threshold")]
+pub struct BelowThresholdError(BigDecimal);

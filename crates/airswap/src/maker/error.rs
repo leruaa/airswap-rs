@@ -1,8 +1,9 @@
-use bigdecimal::BigDecimal;
 use reqwest::StatusCode;
 use thiserror::Error;
 
 use crate::json_rpc::ResponseDecodeError;
+
+use super::service::BelowThresholdError;
 
 #[derive(Error, Debug)]
 pub enum MakerError {
@@ -19,5 +20,5 @@ pub enum MakerError {
     #[error("The pair is not supported")]
     PairNotSupported,
     #[error("The order amount of ${0} is lower than the limit")]
-    AmountTooLow(BigDecimal),
+    AmountTooLow(#[from] BelowThresholdError),
 }
