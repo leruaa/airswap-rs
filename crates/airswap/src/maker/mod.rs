@@ -10,17 +10,17 @@ pub use config::MakerConfig;
 pub use error::MakerError;
 pub use service::{MakerService, ThresholdLayer};
 
-use self::json_rpc::{OrderParams, Payload, SenderSideOrderParams, SignerSideOrderParams};
+use self::json_rpc::{OrderParams, SenderSideOrderParams, SignerSideOrderParams};
 
-pub fn build_buy_payload(
+pub fn build_buy_order(
     from: Address,
     from_token: Address,
     to_token: Address,
     amount: U256,
     swap_address: Address,
     chain_id: u64,
-) -> Payload {
-    let order = SenderSideOrderParams {
+) -> SenderSideOrderParams {
+    SenderSideOrderParams {
         signer_amount: amount.to_string(),
         order: OrderParams {
             chain_id: chain_id.to_string(),
@@ -31,20 +31,18 @@ pub fn build_buy_payload(
             expiry: None,
             proxying_for: None, // Ultimate counterparty of the swap (Optional)
         },
-    };
-
-    Payload::SenderSideOrder(order)
+    }
 }
 
-pub fn build_sell_payload(
+pub fn build_sell_order(
     from: Address,
     from_token: Address,
     to_token: Address,
     amount: U256,
     swap_address: Address,
     chain_id: u64,
-) -> Payload {
-    let order = SignerSideOrderParams {
+) -> SignerSideOrderParams {
+    SignerSideOrderParams {
         sender_amount: amount.to_string(),
         order: OrderParams {
             chain_id: chain_id.to_string(),
@@ -55,7 +53,5 @@ pub fn build_sell_payload(
             expiry: None,             // Ultimate counterparty of the swap (Optional)
             proxying_for: None,
         },
-    };
-
-    Payload::SignerSideOrder(order)
+    }
 }

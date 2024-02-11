@@ -3,7 +3,7 @@ mod registry;
 mod swap;
 
 pub use maker::{
-    build_buy_payload, build_sell_payload, json_rpc, MakerClient, MakerConfig, MakerError,
+    build_buy_order, build_sell_order, json_rpc, MakerClient, MakerConfig, MakerError,
     MakerService, ThresholdLayer,
 };
 pub use registry::{

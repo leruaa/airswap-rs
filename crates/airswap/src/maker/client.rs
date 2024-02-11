@@ -3,7 +3,7 @@ use tokio::sync::RwLock;
 use tower::{Service, ServiceExt};
 
 use crate::{
-    build_buy_payload,
+    build_buy_order,
     json_rpc::{OrderParams, Pair, PricingParams, PricingPayload, ResponseResult},
     MakerWithSupportedTokens,
 };
@@ -37,7 +37,7 @@ impl MakerClient {
         to_token: Address,
         amount: U256,
     ) -> Result<OrderPayload, MakerError> {
-        let payload = build_buy_payload(
+        let order = build_buy_order(
             from,
             from_token,
             to_token,
@@ -46,7 +46,10 @@ impl MakerClient {
             self.chain_id,
         );
 
-        let payload = self.post(payload).await?.try_into()?;
+        let payload = self
+            .post(Payload::SenderSideOrder(order))
+            .await?
+            .try_into()?;
 
         Ok(payload)
     }
