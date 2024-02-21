@@ -152,5 +152,5 @@ where
 }
 
 #[derive(Error, Debug)]
-#[error("The order amount of {0} is lower than the threshold")]
+#[error("The order amount of {0:.2} is lower than the threshold")]
 pub struct BelowThresholdError(BigDecimal);

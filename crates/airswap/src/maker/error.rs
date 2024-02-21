@@ -19,6 +19,6 @@ pub enum MakerError {
     RateLimitMet,
     #[error("The pair is not supported")]
     PairNotSupported,
-    #[error("The order amount of ${0} is lower than the limit")]
+    #[error(transparent)]
     AmountTooLow(#[from] BelowThresholdError),
 }
