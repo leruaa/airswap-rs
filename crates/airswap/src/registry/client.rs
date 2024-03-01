@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use alloy_primitives::Address;
 use alloy_providers::provider::{Provider, TempProvider};
-use alloy_rpc_types::{CallInput, CallRequest, Filter};
+use alloy_rpc_types::{
+    request::{TransactionInput, TransactionRequest},
+    Filter,
+};
 use alloy_sol_types::{sol, SolCall, SolEvent};
 use alloy_transport::{BoxTransport, TransportError};
 use async_trait::async_trait;
@@ -28,8 +31,8 @@ async fn call<C: SolCall + Send + Sync>(
     call: C,
     to: Address,
 ) -> Result<C::Return, RegistryError> {
-    let tx = CallRequest {
-        input: CallInput::new(call.abi_encode().into()),
+    let tx = TransactionRequest {
+        input: TransactionInput::new(call.abi_encode().into()),
         to: Some(to),
         ..Default::default()
     };

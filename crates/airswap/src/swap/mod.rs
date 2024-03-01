@@ -10,9 +10,11 @@ use alloy_rpc_types::{
 };
 use alloy_sol_types::{sol, SolEvent};
 use alloy_transport::{BoxTransport, TransportError};
-use futures::{stream::BoxStream, StreamExt, TryStreamExt};
+use futures::{
+    stream::{self, BoxStream},
+    StreamExt, TryStreamExt,
+};
 use thiserror::Error;
-use tokio_stream::wrappers::BroadcastStream;
 
 sol!(SwapERC20Contract, "abi/swap_erc20.json");
 
@@ -46,10 +48,7 @@ pub async fn get_swap_events_stream(
     id: Id,
 ) -> Result<BoxStream<Result<SwapERC20Contract::SwapERC20, SwapError>>, SwapError> {
     let req = Request {
-        meta: RequestMeta {
-            method: "eth_subscribe",
-            id,
-        },
+        meta: RequestMeta::new("eth_subscribe", id),
         params: [
             serde_json::to_value(SubscriptionKind::Logs)?,
             serde_json::to_value(Params::Logs(Box::new(
@@ -73,15 +72,19 @@ pub async fn get_swap_events_stream(
 
     let rx = front_end.get_subscription(subscription_id).await?;
 
-    let stream = BroadcastStream::new(rx)
-        .map_err(|_| SwapError::Receive)
-        .map(|r| {
-            r.and_then(|value| serde_json::from_str::<Log>(value.get()).map_err(Into::into))
-                .and_then(|log| {
-                    SwapERC20Contract::SwapERC20::decode_log_data(&log.try_into()?, true)
-                        .map_err(Into::into)
-                })
-        });
+    let stream = stream::unfold(rx, |mut rx| async move {
+        let value = rx.recv().await;
+
+        Some((value, rx))
+    });
+
+    let stream = stream.map_err(|_| SwapError::Receive).map(|r| {
+        r.and_then(|value| serde_json::from_str::<Log>(value.get()).map_err(Into::into))
+            .and_then(|log| {
+                SwapERC20Contract::SwapERC20::decode_log_data(&log.try_into()?, true)
+                    .map_err(Into::into)
+            })
+    });
 
     Ok(stream.boxed())
 }
