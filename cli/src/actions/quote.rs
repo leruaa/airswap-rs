@@ -7,7 +7,11 @@ use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::{TokenId, TokenStore};
+use erc20::{
+    clients::{CachableTokenClient, TokenClient},
+    stores::BasicTokenStore,
+    TokenId,
+};
 use futures::future::join_all;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -59,16 +63,20 @@ impl Action for QuoteAction {
         let registry_client =
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
 
-        let token_store = TokenStore::new(chain_id, provider);
+        let token_client = CachableTokenClient::new(
+            TokenClient::new(provider),
+            chain_id as u8,
+            BasicTokenStore::new(),
+        );
 
         let from_address = "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"
             .parse()
             .unwrap();
-        let from_token = token_store
-            .get(TokenId::Symbol(self.from_symbol.clone()))
+        let from_token = token_client
+            .retrieve_token(TokenId::Symbol(self.from_symbol.clone()))
             .await?;
-        let to_token = token_store
-            .get(TokenId::Symbol(self.to_symbol.clone()))
+        let to_token = token_client
+            .retrieve_token(TokenId::Symbol(self.to_symbol.clone()))
             .await?;
 
         let makers = registry_client

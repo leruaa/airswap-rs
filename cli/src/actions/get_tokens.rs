@@ -8,7 +8,11 @@ use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::{TokenId, TokenStore};
+use erc20::{
+    clients::{CachableTokenClient, TokenClient},
+    stores::BasicTokenStore,
+    TokenId,
+};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
@@ -41,7 +45,11 @@ impl Action for GetTokensAction {
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry_client =
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
-        let token_store = TokenStore::new(chain_id, provider);
+        let token_client = CachableTokenClient::new(
+            TokenClient::new(provider),
+            chain_id as u8,
+            BasicTokenStore::new(),
+        );
 
         let supported_tokens = registry_client
             .get_tokens(self.maker_address.parse().unwrap())
@@ -49,7 +57,9 @@ impl Action for GetTokensAction {
         let mut tokens = vec![];
 
         for address in supported_tokens {
-            let token = token_store.get(TokenId::Address(address)).await?;
+            let token = token_client
+                .retrieve_token(TokenId::Address(address))
+                .await?;
 
             tokens.push(Token::from(token));
         }

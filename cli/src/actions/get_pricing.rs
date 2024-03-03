@@ -4,7 +4,11 @@ use airswap::{json_rpc::Pair, MakerClient, RegistryClient};
 use alloy_providers::provider::{Provider, TempProvider};
 use alloy_rpc_client::RpcClient;
 use anyhow::Result;
-use erc20::{TokenId, TokenStore};
+use erc20::{
+    clients::{CachableTokenClient, TokenClient},
+    stores::BasicTokenStore,
+    TokenId,
+};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
@@ -53,13 +57,17 @@ impl Action for GetPricingAction {
 
         let maker_client = MakerClient::new(chain_id, maker);
 
-        let token_store = TokenStore::new(chain_id, provider);
+        let token_client = CachableTokenClient::new(
+            TokenClient::new(provider),
+            chain_id as u8,
+            BasicTokenStore::new(),
+        );
 
-        let form_token = token_store
-            .get(TokenId::Symbol(self.from_symbol.clone()))
+        let form_token = token_client
+            .retrieve_token(TokenId::Symbol(self.from_symbol.clone()))
             .await?;
-        let to_token = token_store
-            .get(TokenId::Symbol(self.to_symbol.clone()))
+        let to_token = token_client
+            .retrieve_token(TokenId::Symbol(self.to_symbol.clone()))
             .await?;
 
         let pricing = maker_client
