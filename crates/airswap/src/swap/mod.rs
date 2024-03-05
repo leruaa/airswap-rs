@@ -15,6 +15,7 @@ use futures::{
     StreamExt, TryStreamExt,
 };
 use thiserror::Error;
+use tracing::error;
 
 sol!(SwapERC20Contract, "abi/swap_erc20.json");
 
@@ -47,6 +48,7 @@ pub async fn get_swap_events_stream(
     swap_address: Address,
     id: Id,
 ) -> Result<BoxStream<Result<SwapERC20Contract::SwapERC20, SwapError>>, SwapError> {
+    let stringified_id = id.to_string();
     let req = Request {
         meta: RequestMeta::new("eth_subscribe", id),
         params: [
@@ -72,19 +74,25 @@ pub async fn get_swap_events_stream(
 
     let rx = front_end.get_subscription(subscription_id).await?;
 
-    let stream = stream::unfold(rx, |mut rx| async move {
-        let value = rx.recv().await;
+    let stream = stream::unfold(
+        (rx, stringified_id),
+        |(mut rx, stringified_id)| async move {
+            match rx.recv().await {
+                Ok(value) => Some((value, (rx, stringified_id))),
+                Err(err) => {
+                    error!("Subscription {stringified_id} ended: {err}");
+                    None
+                }
+            }
+        },
+    );
 
-        Some((value, rx))
-    });
-
-    let stream = stream.map_err(|_| SwapError::Receive).map(|r| {
-        r.and_then(|value| serde_json::from_str::<Log>(value.get()).map_err(Into::into))
-            .and_then(|log| {
-                SwapERC20Contract::SwapERC20::decode_log_data(&log.try_into()?, true)
-                    .map_err(Into::into)
-            })
-    });
+    let stream = stream
+        .map(|value| serde_json::from_str::<Log>(value.get()).map_err(Into::into))
+        .and_then(|log| async {
+            SwapERC20Contract::SwapERC20::decode_log_data(&log.try_into()?, true)
+                .map_err(Into::into)
+        });
 
     Ok(stream.boxed())
 }
