@@ -1,13 +1,11 @@
 use std::sync::Arc;
 
+use alloy_network::{Network, TransactionBuilder};
 use alloy_primitives::Address;
-use alloy_providers::provider::{Provider, TempProvider};
-use alloy_rpc_types::{
-    request::{TransactionInput, TransactionRequest},
-    Filter,
-};
+use alloy_provider::{Provider, RootProvider};
+use alloy_rpc_types::Filter;
 use alloy_sol_types::{sol, SolCall, SolEvent};
-use alloy_transport::{BoxTransport, TransportError};
+use alloy_transport::{Transport, TransportError};
 use async_trait::async_trait;
 use futures::{future::try_join_all, TryFutureExt};
 use thiserror::Error;
@@ -26,27 +24,35 @@ pub trait RegistryContract: Send + Sync {
     async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError>;
 }
 
-async fn call<C: SolCall + Send + Sync>(
-    provider: &Arc<Provider<BoxTransport>>,
+async fn call<C, N, T>(
+    provider: &Arc<RootProvider<N, T>>,
     call: C,
     to: Address,
-) -> Result<C::Return, RegistryError> {
-    let tx = TransactionRequest {
-        input: TransactionInput::new(call.abi_encode().into()),
-        to: Some(to),
-        ..Default::default()
-    };
+) -> Result<C::Return, RegistryError>
+where
+    C: SolCall + Send + Sync,
+    N: Network,
+    T: Transport + Clone,
+{
+    let tx = N::TransactionRequest::default()
+        .with_input(call.abi_encode().into())
+        .with_to(to.into());
 
-    let result = provider.call(tx, None).await?;
+    let result = provider.call(&tx, None).await?;
     let decoded = C::abi_decode_returns(&result, true)?;
 
     Ok(decoded)
 }
 
-async fn get_makers_events<E: SolEvent>(
-    provider: &Arc<Provider<BoxTransport>>,
+async fn get_makers_events<E, N, T>(
+    provider: &Arc<RootProvider<N, T>>,
     config: &RegistryConfig,
-) -> Result<Vec<E>, RegistryError> {
+) -> Result<Vec<E>, RegistryError>
+where
+    E: SolEvent,
+    N: Network,
+    T: Transport + Clone,
+{
     let filter = Filter::new()
         .from_block(config.from_block)
         .address(config.address)
@@ -88,11 +94,15 @@ pub struct RegistryClient {
 }
 
 impl RegistryClient {
-    pub fn new(
-        provider: Arc<Provider<BoxTransport>>,
+    pub fn new<N, T>(
+        provider: Arc<RootProvider<N, T>>,
         chain_id: u64,
         version: RegistryVersion,
-    ) -> Self {
+    ) -> Self
+    where
+        N: Network,
+        T: Transport + Clone,
+    {
         match version {
             RegistryVersion::Legacy => Self {
                 inner: Box::new(LegacyRegistry::new(provider, chain_id, version)),
@@ -139,17 +149,13 @@ impl RegistryClient {
     }
 }
 
-pub struct LegacyRegistry {
-    provider: Arc<Provider<BoxTransport>>,
+pub struct LegacyRegistry<N, T> {
+    provider: Arc<RootProvider<N, T>>,
     config: RegistryConfig,
 }
 
-impl LegacyRegistry {
-    pub fn new(
-        provider: Arc<Provider<BoxTransport>>,
-        chain_id: u64,
-        version: RegistryVersion,
-    ) -> Self {
+impl<N, T> LegacyRegistry<N, T> {
+    pub fn new(provider: Arc<RootProvider<N, T>>, chain_id: u64, version: RegistryVersion) -> Self {
         let config = RegistryConfig::new(chain_id, version);
 
         Self { provider, config }
@@ -157,7 +163,11 @@ impl LegacyRegistry {
 }
 
 #[async_trait]
-impl RegistryContract for LegacyRegistry {
+impl<N, T> RegistryContract for LegacyRegistry<N, T>
+where
+    N: Network + Send + Sync,
+    T: Transport + Clone + Send + Sync,
+{
     async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError> {
         let url = call(
             &self.provider,
@@ -171,7 +181,7 @@ impl RegistryContract for LegacyRegistry {
 
     async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
         let makers =
-            get_makers_events::<LegacyRegistryContract::SetURL>(&self.provider, &self.config)
+            get_makers_events::<LegacyRegistryContract::SetURL, _, _>(&self.provider, &self.config)
                 .await?
                 .into_iter()
                 .map(|e| normalized_maker(e.account, e.url))
@@ -192,17 +202,13 @@ impl RegistryContract for LegacyRegistry {
     }
 }
 
-pub struct RegistryV4 {
-    provider: Arc<Provider<BoxTransport>>,
+pub struct RegistryV4<N, T> {
+    provider: Arc<RootProvider<N, T>>,
     config: RegistryConfig,
 }
 
-impl RegistryV4 {
-    pub fn new(
-        provider: Arc<Provider<BoxTransport>>,
-        chain_id: u64,
-        version: RegistryVersion,
-    ) -> Self {
+impl<N, T> RegistryV4<N, T> {
+    pub fn new(provider: Arc<RootProvider<N, T>>, chain_id: u64, version: RegistryVersion) -> Self {
         let config = RegistryConfig::new(chain_id, version);
 
         Self { provider, config }
@@ -210,7 +216,11 @@ impl RegistryV4 {
 }
 
 #[async_trait]
-impl RegistryContract for RegistryV4 {
+impl<N, T> RegistryContract for RegistryV4<N, T>
+where
+    N: Network + Send + Sync,
+    T: Transport + Clone + Send + Sync,
+{
     async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError> {
         let url = call(
             &self.provider,
@@ -223,12 +233,14 @@ impl RegistryContract for RegistryV4 {
     }
 
     async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
-        let makers =
-            get_makers_events::<RegistryV4Contract::SetServerURL>(&self.provider, &self.config)
-                .await?
-                .into_iter()
-                .map(|e| normalized_maker(e.account, e.url))
-                .collect();
+        let makers = get_makers_events::<RegistryV4Contract::SetServerURL, _, _>(
+            &self.provider,
+            &self.config,
+        )
+        .await?
+        .into_iter()
+        .map(|e| normalized_maker(e.account, e.url))
+        .collect();
 
         Ok(makers)
     }

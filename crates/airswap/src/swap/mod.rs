@@ -1,15 +1,16 @@
 use std::sync::Arc;
 
 use alloy_json_rpc::{ErrorPayload, Id, Request, RequestMeta, ResponsePayload};
+use alloy_network::Network;
 use alloy_primitives::{Address, U256};
-use alloy_providers::provider::{Provider, TempProvider};
+use alloy_provider::{Provider, RootProvider};
 use alloy_pubsub::PubSubFrontend;
 use alloy_rpc_types::{
     pubsub::{Params, SubscriptionKind},
     BlockNumberOrTag, Filter, Log,
 };
 use alloy_sol_types::{sol, SolEvent};
-use alloy_transport::{BoxTransport, TransportError};
+use alloy_transport::{Transport, TransportError};
 use futures::{
     stream::{self, BoxStream},
     StreamExt, TryStreamExt,
@@ -19,12 +20,17 @@ use tracing::error;
 
 sol!(SwapERC20Contract, "abi/swap_erc20.json");
 
-pub async fn get_swap_events<B: Into<BlockNumberOrTag>>(
-    provider: Arc<Provider<BoxTransport>>,
+pub async fn get_swap_events<B, N, T>(
+    provider: Arc<RootProvider<N, T>>,
     swap_address: Address,
     from_block: B,
     to_block: Option<B>,
-) -> Result<Vec<SwapERC20Contract::SwapERC20>, SwapError> {
+) -> Result<Vec<SwapERC20Contract::SwapERC20>, SwapError>
+where
+    B: Into<BlockNumberOrTag>,
+    N: Network,
+    T: Transport + Clone,
+{
     let filter = Filter::new()
         .from_block(from_block)
         .to_block(to_block.map(|b| b.into()).unwrap_or_default())

@@ -1,8 +1,9 @@
 use std::{env, sync::Arc};
 
 use airswap::{RegistryClient, RegistryVersion};
+use alloy_network::Ethereum;
 use alloy_primitives::{address, Address};
-use alloy_providers::provider::Provider;
+use alloy_provider::ProviderBuilder;
 use alloy_rpc_client::RpcClient;
 use dotenv::dotenv;
 
@@ -13,11 +14,8 @@ async fn test_registry() {
     dotenv().ok();
 
     let eth_rpc = env::var("ETH_RPC_URL").unwrap();
-    let provider = Provider::new_with_client(
-        RpcClient::builder()
-            .reqwest_http(eth_rpc.parse().unwrap())
-            .boxed(),
-    );
+    let rpc_client = RpcClient::builder().reqwest_http(eth_rpc.parse().unwrap());
+    let provider = ProviderBuilder::<_, Ethereum>::new().on_client(rpc_client);
 
     let registry_client = RegistryClient::new(Arc::new(provider), 1, RegistryVersion::Legacy);
 
