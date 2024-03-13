@@ -37,7 +37,7 @@ where
         .address(swap_address)
         .event(SwapERC20Contract::SwapERC20::SIGNATURE);
 
-    let swap_event_logs = provider.get_logs(filter).await?;
+    let swap_event_logs = provider.get_logs(&filter).await?;
     let mut events = vec![];
 
     for log in swap_event_logs.into_iter().filter(|l| !l.removed) {

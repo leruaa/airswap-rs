@@ -58,7 +58,7 @@ where
         .address(config.address)
         .event(E::SIGNATURE);
 
-    let set_url_events = provider.get_logs(filter).await?;
+    let set_url_events = provider.get_logs(&filter).await?;
 
     set_url_events
         .into_iter()
