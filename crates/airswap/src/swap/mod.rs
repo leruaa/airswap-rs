@@ -56,7 +56,7 @@ pub async fn get_swap_events_stream(
 ) -> Result<BoxStream<Result<SwapERC20Contract::SwapERC20, SwapError>>, SwapError> {
     let stringified_id = id.to_string();
     let req = Request {
-        meta: RequestMeta::new("eth_subscribe", id),
+        meta: RequestMeta::new("eth_subscribe".into(), id),
         params: [
             serde_json::to_value(SubscriptionKind::Logs)?,
             serde_json::to_value(Params::Logs(Box::new(
