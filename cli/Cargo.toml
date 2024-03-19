@@ -9,9 +9,7 @@ edition = "2021"
 airswap = { path = "../crates/airswap" }
 erc20 = { workspace = true }
 alloy-primitives = { workspace = true }
-alloy-network = { workspace = true }
-alloy-provider = { workspace = true }
-alloy-rpc-client = { workspace = true }
+alloy = { workspace = true, features = ["network", "providers", "rpc-client"] }
 num-traits = { workspace = true }
 ruint = { features = ["num-traits"] }
 clap = { version = "4.3.19", features = ["derive", "env"] }

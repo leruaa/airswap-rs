@@ -1,8 +1,6 @@
 use airswap::{MakerClient, MakerWithSupportedTokens, RegistryClient};
-use alloy_network::Ethereum;
+use alloy::{network::Ethereum, providers::{Provider, ProviderBuilder}, rpc::client::RpcClient};
 use alloy_primitives::{utils::parse_units, Address};
-use alloy_provider::{Provider, ProviderBuilder};
-use alloy_rpc_client::RpcClient;
 use anyhow::Result;
 use cli_table::{
     format::{Border, Separator},

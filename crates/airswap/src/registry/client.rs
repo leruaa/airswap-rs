@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
-use alloy_network::{Network, TransactionBuilder};
+use alloy::{
+    network::{Network, TransactionBuilder},
+    providers::{Provider, RootProvider},
+    rpc::types::eth::Filter,
+    transports::{Transport, TransportError},
+};
 use alloy_primitives::Address;
-use alloy_provider::{Provider, RootProvider};
-use alloy_rpc_types::Filter;
 use alloy_sol_types::{sol, SolCall, SolEvent};
-use alloy_transport::{Transport, TransportError};
 use async_trait::async_trait;
 use futures::{future::try_join_all, TryFutureExt};
 use thiserror::Error;

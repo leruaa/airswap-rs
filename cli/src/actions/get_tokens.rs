@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
 use airswap::RegistryClient;
-use alloy_network::Ethereum;
-use alloy_provider::{Provider, ProviderBuilder};
-use alloy_rpc_client::RpcClient;
+use alloy::{
+    network::Ethereum,
+    providers::{Provider, ProviderBuilder},
+    rpc::client::RpcClient,
+};
 use anyhow::Result;
 use cli_table::{
     format::{Border, Separator},

@@ -1,10 +1,8 @@
 use std::{env, sync::Arc};
 
 use airswap::{RegistryClient, RegistryVersion};
-use alloy_network::Ethereum;
+use alloy::{network::Ethereum, providers::ProviderBuilder, rpc::client::RpcClient};
 use alloy_primitives::{address, Address};
-use alloy_provider::ProviderBuilder;
-use alloy_rpc_client::RpcClient;
 use dotenv::dotenv;
 
 pub static MYETH: Address = address!("143395428158a57d17bcd8899770460656de98e4");

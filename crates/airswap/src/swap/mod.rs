@@ -1,16 +1,20 @@
 use std::sync::Arc;
 
-use alloy_json_rpc::{ErrorPayload, Id, Request, RequestMeta, ResponsePayload};
-use alloy_network::Network;
-use alloy_primitives::{Address, U256};
-use alloy_provider::{Provider, RootProvider};
-use alloy_pubsub::PubSubFrontend;
-use alloy_rpc_types::{
-    pubsub::{Params, SubscriptionKind},
-    BlockNumberOrTag, Filter, Log,
+use alloy::{
+    network::Network,
+    providers::{Provider, RootProvider},
+    pubsub::PubSubFrontend,
+    rpc::{
+        json_rpc::{ErrorPayload, Id, Request, RequestMeta, ResponsePayload},
+        types::eth::{
+            pubsub::{Params, SubscriptionKind},
+            BlockNumberOrTag, Filter, Log,
+        },
+    },
+    transports::{Transport, TransportError},
 };
+use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolEvent};
-use alloy_transport::{Transport, TransportError};
 use futures::{
     stream::{self, BoxStream},
     StreamExt, TryStreamExt,
@@ -110,7 +114,7 @@ pub enum SwapError {
     #[error(transparent)]
     Transport(#[from] TransportError),
     #[error(transparent)]
-    Log(#[from] alloy_rpc_types::LogError),
+    Log(#[from] alloy::rpc::types::eth::LogError),
     #[error(transparent)]
     Sol(#[from] alloy_sol_types::Error),
     #[error(transparent)]
