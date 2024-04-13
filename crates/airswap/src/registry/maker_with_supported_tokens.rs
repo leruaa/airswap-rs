@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use alloy_primitives::Address;
+use alloy::primitives::Address;
 
 use crate::Maker;
 

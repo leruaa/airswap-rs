@@ -4,7 +4,7 @@ mod error;
 pub mod json_rpc;
 mod service;
 
-use alloy_primitives::{Address, U256};
+use alloy::primitives::{Address, U256};
 pub use client::MakerClient;
 pub use config::MakerConfig;
 pub use error::MakerError;

@@ -5,7 +5,7 @@ mod maker_with_supported_tokens;
 
 use std::collections::HashMap;
 
-use alloy_primitives::{address, Address};
+use alloy::primitives::{address, Address};
 pub use client::{RegistryClient, RegistryError};
 pub use config::RegistryVersion;
 pub use maker::Maker;

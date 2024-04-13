@@ -1,5 +1,5 @@
 use airswap::{Maker, MakerClient, MakerWithSupportedTokens};
-use alloy_primitives::{address, U256};
+use alloy::primitives::{address, U256};
 
 #[tokio::test]
 async fn test_maker() {

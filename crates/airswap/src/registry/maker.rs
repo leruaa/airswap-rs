@@ -1,6 +1,6 @@
 use std::{fmt::Display, sync::Arc};
 
-use alloy_primitives::Address;
+use alloy::primitives::Address;
 
 use crate::{registry::KNOWN_MAKERS, MakerWithSupportedTokens};
 

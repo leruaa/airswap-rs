@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use alloy::primitives::{Address, U256};
 use alloy::{
     network::Network,
     providers::{Provider, RootProvider},
@@ -11,10 +12,10 @@ use alloy::{
             BlockNumberOrTag, Filter, Log,
         },
     },
+    sol,
+    sol_types::SolEvent,
     transports::{Transport, TransportError},
 };
-use alloy_primitives::{Address, U256};
-use alloy_sol_types::{sol, SolEvent};
 use futures::{
     stream::{self, BoxStream},
     StreamExt, TryStreamExt,
@@ -24,8 +25,8 @@ use tracing::error;
 
 sol!(SwapERC20Contract, "abi/swap_erc20.json");
 
-pub async fn get_swap_events<B, N, T>(
-    provider: Arc<RootProvider<N, T>>,
+pub async fn get_swap_events<B, T, N>(
+    provider: Arc<RootProvider<T, N>>,
     swap_address: Address,
     from_block: B,
     to_block: Option<B>,
@@ -45,7 +46,7 @@ where
     let mut events = vec![];
 
     for log in swap_event_logs.into_iter().filter(|l| !l.removed) {
-        let swap_event = SwapERC20Contract::SwapERC20::decode_log_data(&log.try_into()?, true)?;
+        let swap_event = SwapERC20Contract::SwapERC20::decode_log_data(log.data(), true)?;
 
         events.push(swap_event);
     }
@@ -99,9 +100,8 @@ pub async fn get_swap_events_stream(
 
     let stream = stream
         .map(|value| serde_json::from_str::<Log>(value.get()).map_err(Into::into))
-        .and_then(|log| async {
-            SwapERC20Contract::SwapERC20::decode_log_data(&log.try_into()?, true)
-                .map_err(Into::into)
+        .and_then(|log| async move {
+            SwapERC20Contract::SwapERC20::decode_log_data(log.data(), true).map_err(Into::into)
         });
 
     Ok(stream.boxed())
@@ -114,9 +114,7 @@ pub enum SwapError {
     #[error(transparent)]
     Transport(#[from] TransportError),
     #[error(transparent)]
-    Log(#[from] alloy::rpc::types::eth::LogError),
-    #[error(transparent)]
-    Sol(#[from] alloy_sol_types::Error),
+    Sol(#[from] alloy::sol_types::Error),
     #[error(transparent)]
     Serde(#[from] serde_json::Error),
     #[error("Receive error")]

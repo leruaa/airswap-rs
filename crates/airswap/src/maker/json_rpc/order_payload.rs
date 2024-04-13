@@ -1,4 +1,4 @@
-use alloy_primitives::{Address, FixedBytes, U256, U64};
+use alloy::primitives::{Address, FixedBytes, U256, U64};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -73,7 +73,7 @@ impl TryFrom<ResponseResult> for OrderPayload {
 
 #[cfg(test)]
 mod tests {
-    use alloy_primitives::U256;
+    use alloy::primitives::U256;
 
     use super::OrderPayload;
 

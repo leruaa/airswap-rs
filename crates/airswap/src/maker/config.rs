@@ -1,4 +1,4 @@
-use alloy_primitives::{address, Address};
+use alloy::primitives::{address, Address};
 
 pub struct MakerConfig {
     pub swap_address: Address,

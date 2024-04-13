@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
+use alloy::primitives::Address;
+use alloy::sol_types::{SolCall, SolEvent};
 use alloy::{
     network::{Network, TransactionBuilder},
     providers::{Provider, RootProvider},
     rpc::types::eth::Filter,
+    sol,
     transports::{Transport, TransportError},
 };
-use alloy_primitives::Address;
-use alloy_sol_types::{sol, SolCall, SolEvent};
 use async_trait::async_trait;
 use futures::{future::try_join_all, TryFutureExt};
 use thiserror::Error;
@@ -26,15 +27,15 @@ pub trait RegistryContract: Send + Sync {
     async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError>;
 }
 
-async fn call<C, N, T>(
-    provider: &Arc<RootProvider<N, T>>,
+async fn call<C, T, N>(
+    provider: &Arc<RootProvider<T, N>>,
     call: C,
     to: Address,
 ) -> Result<C::Return, RegistryError>
 where
     C: SolCall + Send + Sync,
-    N: Network,
     T: Transport + Clone,
+    N: Network,
 {
     let tx = N::TransactionRequest::default()
         .with_input(call.abi_encode().into())
@@ -46,14 +47,14 @@ where
     Ok(decoded)
 }
 
-async fn get_makers_events<E, N, T>(
-    provider: &Arc<RootProvider<N, T>>,
+async fn get_makers_events<E, T, N>(
+    provider: &Arc<RootProvider<T, N>>,
     config: &RegistryConfig,
 ) -> Result<Vec<E>, RegistryError>
 where
     E: SolEvent,
-    N: Network,
     T: Transport + Clone,
+    N: Network,
 {
     let filter = Filter::new()
         .from_block(config.from_block)
@@ -64,12 +65,7 @@ where
 
     set_url_events
         .into_iter()
-        .map(|log| {
-            alloy_primitives::Log::new(config.address, log.topics, log.data)
-                .ok_or(RegistryError::Log)
-                .and_then(|log| E::decode_log(&log, true).map_err(RegistryError::from))
-                .map(|l| l.data)
-        })
+        .map(|log| E::decode_log_data(log.data(), true).map_err(RegistryError::from))
         .collect::<Result<Vec<_>, _>>()
 }
 
@@ -96,8 +92,8 @@ pub struct RegistryClient {
 }
 
 impl RegistryClient {
-    pub fn new<N, T>(
-        provider: Arc<RootProvider<N, T>>,
+    pub fn new<T, N>(
+        provider: Arc<RootProvider<T, N>>,
         chain_id: u64,
         version: RegistryVersion,
     ) -> Self
@@ -165,10 +161,10 @@ impl<N, T> LegacyRegistry<N, T> {
 }
 
 #[async_trait]
-impl<N, T> RegistryContract for LegacyRegistry<N, T>
+impl<T, N> RegistryContract for LegacyRegistry<T, N>
 where
-    N: Network + Send + Sync,
     T: Transport + Clone + Send + Sync,
+    N: Network + Send + Sync,
 {
     async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError> {
         let url = call(
@@ -204,13 +200,13 @@ where
     }
 }
 
-pub struct RegistryV4<N, T> {
-    provider: Arc<RootProvider<N, T>>,
+pub struct RegistryV4<T, N> {
+    provider: Arc<RootProvider<T, N>>,
     config: RegistryConfig,
 }
 
-impl<N, T> RegistryV4<N, T> {
-    pub fn new(provider: Arc<RootProvider<N, T>>, chain_id: u64, version: RegistryVersion) -> Self {
+impl<T, N> RegistryV4<T, N> {
+    pub fn new(provider: Arc<RootProvider<T, N>>, chain_id: u64, version: RegistryVersion) -> Self {
         let config = RegistryConfig::new(chain_id, version);
 
         Self { provider, config }
@@ -218,10 +214,10 @@ impl<N, T> RegistryV4<N, T> {
 }
 
 #[async_trait]
-impl<N, T> RegistryContract for RegistryV4<N, T>
+impl<T, N> RegistryContract for RegistryV4<T, N>
 where
-    N: Network + Send + Sync,
     T: Transport + Clone + Send + Sync,
+    N: Network + Send + Sync,
 {
     async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError> {
         let url = call(
@@ -266,5 +262,5 @@ pub enum RegistryError {
     #[error("Invalid log")]
     Log,
     #[error(transparent)]
-    Sol(#[from] alloy_sol_types::Error),
+    Sol(#[from] alloy::sol_types::Error),
 }

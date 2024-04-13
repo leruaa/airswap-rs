@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use alloy_primitives::{address, Address, BlockNumber};
+use alloy::primitives::{address, Address, BlockNumber};
 
 pub struct RegistryConfig {
     pub address: Address,

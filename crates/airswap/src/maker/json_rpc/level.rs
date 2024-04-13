@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use alloy_primitives::U256;
+use alloy::primitives::U256;
 use serde::{
     de::{Error as DeserializeError, Visitor},
     Deserialize, Deserializer,

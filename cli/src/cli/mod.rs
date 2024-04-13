@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use airswap::RegistryVersion;
-use alloy_primitives::Address;
+use alloy::primitives::Address;
 use clap::{Args, Parser, Subcommand};
 
 use crate::actions::{Action, GetMakersAction, GetPricingAction, GetTokensAction, QuoteAction};

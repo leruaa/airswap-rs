@@ -1,10 +1,10 @@
 use airswap::{MakerClient, MakerWithSupportedTokens, RegistryClient};
+use alloy::primitives::{utils::parse_units, Address};
 use alloy::{
     network::Ethereum,
     providers::{Provider, ProviderBuilder},
     rpc::client::RpcClient,
 };
-use alloy_primitives::{utils::parse_units, Address};
 use anyhow::Result;
 use cli_table::{
     format::{Border, Separator},

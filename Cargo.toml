@@ -4,7 +4,5 @@ resolver = "2"
 
 [workspace.dependencies]
 erc20 = { git = "https://github.com/leruaa/erc20-rs" }
-alloy-primitives = "0.6"
-alloy-sol-types = { version = "0.6" }
 alloy = { git = "https://github.com/alloy-rs/alloy" }
 num-traits = "0.2"
