@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 airswap = { path = "../crates/airswap" }
-erc20 = { workspace = true }
+erc20 = { workspace = true, features = ["known-tokens"] }
 alloy-primitives = { workspace = true }
 alloy = { workspace = true, features = ["network", "providers", "rpc-client"] }
 num-traits = { workspace = true }

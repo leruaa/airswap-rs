@@ -1,5 +1,9 @@
 use airswap::{MakerClient, MakerWithSupportedTokens, RegistryClient};
-use alloy::{network::Ethereum, providers::{Provider, ProviderBuilder}, rpc::client::RpcClient};
+use alloy::{
+    network::Ethereum,
+    providers::{Provider, ProviderBuilder},
+    rpc::client::RpcClient,
+};
 use alloy_primitives::{utils::parse_units, Address};
 use anyhow::Result;
 use cli_table::{
@@ -8,7 +12,7 @@ use cli_table::{
 };
 use erc20::{
     clients::{CachableTokenClient, TokenClient},
-    stores::BasicTokenStore,
+    stores::{BasicTokenStore, TokenStore},
     TokenId,
 };
 use futures::future::join_all;
@@ -59,11 +63,12 @@ impl Action for QuoteAction {
         let registry_client =
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
 
-        let token_client = CachableTokenClient::new(
-            TokenClient::new(provider),
-            chain_id as u8,
-            BasicTokenStore::new(),
-        );
+        let mut store = BasicTokenStore::new();
+
+        store.insert_known_tokens(chain_id as u8);
+
+        let token_client =
+            CachableTokenClient::new(TokenClient::new(provider), chain_id as u8, store);
 
         let from_address = "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"
             .parse()
