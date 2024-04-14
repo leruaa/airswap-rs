@@ -1,9 +1,5 @@
 use airswap::RegistryClient;
-use alloy::{
-    network::Ethereum,
-    providers::{Provider, ProviderBuilder},
-    rpc::client::RpcClient,
-};
+use alloy::providers::{Provider, ProviderBuilder};
 use anyhow::Result;
 use cli_table::{
     format::{Border, Separator},
@@ -29,8 +25,7 @@ impl GetMakersAction {
 #[async_trait::async_trait]
 impl Action for GetMakersAction {
     async fn execute(&self) -> Result<()> {
-        let rpc_client = RpcClient::builder().reqwest_http(self.config.rpc.parse()?);
-        let provider = ProviderBuilder::<_, Ethereum>::new().on_client(rpc_client);
+        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?)?;
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry = RegistryClient::new(provider, chain_id, self.config.registry_version);

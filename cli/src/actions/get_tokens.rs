@@ -1,21 +1,13 @@
 use std::sync::Arc;
 
 use airswap::RegistryClient;
-use alloy::{
-    network::Ethereum,
-    providers::{Provider, ProviderBuilder},
-    rpc::client::RpcClient,
-};
+use alloy::providers::{Provider, ProviderBuilder};
 use anyhow::Result;
 use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::{
-    clients::{CachableTokenClient, TokenClient},
-    stores::BasicTokenStore,
-    TokenId,
-};
+use erc20::{Erc20Provider, TokenId};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
@@ -39,17 +31,12 @@ impl GetTokensAction {
 #[async_trait::async_trait]
 impl Action for GetTokensAction {
     async fn execute(&self) -> Result<()> {
-        let rpc_client = RpcClient::builder().reqwest_http(self.config.rpc.parse()?);
-        let provider = ProviderBuilder::<_, Ethereum>::new().on_client(rpc_client);
+        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?)?;
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry_client =
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
-        let token_client = CachableTokenClient::new(
-            TokenClient::new(provider),
-            chain_id as u8,
-            BasicTokenStore::new(),
-        );
+        let erc20_provider = Erc20Provider::new(provider, chain_id as u8);
 
         let supported_tokens = registry_client
             .get_tokens(self.maker_address.parse().unwrap())
@@ -57,7 +44,7 @@ impl Action for GetTokensAction {
         let mut tokens = vec![];
 
         for address in supported_tokens {
-            let token = token_client
+            let token = erc20_provider
                 .retrieve_token(TokenId::Address(address))
                 .await?;
 

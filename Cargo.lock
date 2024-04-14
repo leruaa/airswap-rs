@@ -1185,10 +1185,9 @@ checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 [[package]]
 name = "erc20"
 version = "0.1.0"
-source = "git+https://github.com/leruaa/erc20-rs#306b133731909d8753d7ce8282d093fba7aee42c"
+source = "git+https://github.com/leruaa/erc20-rs#21c1f36e5446d37c23c5977b514bf0d47dbf22d5"
 dependencies = [
  "alloy",
- "alloy-primitives",
  "anyhow",
  "bigdecimal",
  "once_cell",

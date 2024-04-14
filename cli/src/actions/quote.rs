@@ -1,17 +1,13 @@
 use airswap::{MakerClient, MakerWithSupportedTokens, RegistryClient};
 use alloy::primitives::{utils::parse_units, Address};
-use alloy::{
-    network::Ethereum,
-    providers::{Provider, ProviderBuilder},
-    rpc::client::RpcClient,
-};
+use alloy::providers::{Provider, ProviderBuilder};
 use anyhow::Result;
 use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
+use erc20::Erc20Provider;
 use erc20::{
-    clients::{CachableTokenClient, TokenClient},
     stores::{BasicTokenStore, TokenStore},
     TokenId,
 };
@@ -56,8 +52,7 @@ impl QuoteAction {
 #[async_trait::async_trait]
 impl Action for QuoteAction {
     async fn execute(&self) -> Result<()> {
-        let rpc_client = RpcClient::builder().reqwest_http(self.config.rpc.parse()?);
-        let provider = ProviderBuilder::<_, Ethereum>::new().on_client(rpc_client);
+        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?)?;
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry_client =
@@ -67,16 +62,15 @@ impl Action for QuoteAction {
 
         store.insert_known_tokens(chain_id as u8);
 
-        let token_client =
-            CachableTokenClient::new(TokenClient::new(provider), chain_id as u8, store);
+        let erc20_provider = Erc20Provider::new(provider, chain_id as u8);
 
         let from_address = "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"
             .parse()
             .unwrap();
-        let from_token = token_client
+        let from_token = erc20_provider
             .retrieve_token(TokenId::Symbol(self.from_symbol.clone()))
             .await?;
-        let to_token = token_client
+        let to_token = erc20_provider
             .retrieve_token(TokenId::Symbol(self.to_symbol.clone()))
             .await?;
 

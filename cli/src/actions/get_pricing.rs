@@ -1,17 +1,9 @@
 use std::sync::Arc;
 
 use airswap::{json_rpc::Pair, MakerClient, RegistryClient};
-use alloy::{
-    network::Ethereum,
-    providers::{Provider, ProviderBuilder},
-    rpc::client::RpcClient,
-};
+use alloy::providers::{Provider, ProviderBuilder};
 use anyhow::Result;
-use erc20::{
-    clients::{CachableTokenClient, TokenClient},
-    stores::BasicTokenStore,
-    TokenId,
-};
+use erc20::{Erc20Provider, TokenId};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
@@ -44,8 +36,7 @@ impl GetPricingAction {
 #[async_trait::async_trait]
 impl Action for GetPricingAction {
     async fn execute(&self) -> Result<()> {
-        let rpc_client = RpcClient::builder().reqwest_http(self.config.rpc.parse()?);
-        let provider = ProviderBuilder::<_, Ethereum>::new().on_client(rpc_client);
+        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?)?;
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry_client =
@@ -57,16 +48,12 @@ impl Action for GetPricingAction {
 
         let maker_client = MakerClient::new(chain_id, maker);
 
-        let token_client = CachableTokenClient::new(
-            TokenClient::new(provider),
-            chain_id as u8,
-            BasicTokenStore::new(),
-        );
+        let erc20_provider = Erc20Provider::new(provider, chain_id as u8);
 
-        let form_token = token_client
+        let form_token = erc20_provider
             .retrieve_token(TokenId::Symbol(self.from_symbol.clone()))
             .await?;
-        let to_token = token_client
+        let to_token = erc20_provider
             .retrieve_token(TokenId::Symbol(self.to_symbol.clone()))
             .await?;
 
