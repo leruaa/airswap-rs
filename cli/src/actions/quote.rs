@@ -1,12 +1,11 @@
 use airswap::{MakerClient, MakerWithSupportedTokens, RegistryClient};
 use alloy::primitives::{utils::parse_units, Address};
 use alloy::providers::{Provider, ProviderBuilder};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::Erc20Provider;
 use erc20::{
     stores::{BasicTokenStore, TokenStore},
     TokenId,
@@ -62,18 +61,15 @@ impl Action for QuoteAction {
 
         store.insert_known_tokens(chain_id as u8);
 
-        let erc20_provider = Erc20Provider::new(provider, chain_id as u8);
-
         let from_address = "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"
             .parse()
             .unwrap();
-        let from_token = erc20_provider
-            .retrieve_token(TokenId::Symbol(self.from_symbol.clone()))
-            .await?;
-        let to_token = erc20_provider
-            .retrieve_token(TokenId::Symbol(self.to_symbol.clone()))
-            .await?;
-
+        let from_token = store
+            .get(chain_id as u8, TokenId::Symbol(self.from_symbol.clone()))
+            .ok_or(anyhow!("The token {} can't be found", &self.from_symbol))?;
+        let to_token = store
+            .get(chain_id as u8, TokenId::Symbol(self.to_symbol.clone()))
+            .ok_or(anyhow!("The token {} can't be found", &self.to_symbol))?;
         let makers = registry_client
             .get_makers_with_supported_tokens()
             .await?

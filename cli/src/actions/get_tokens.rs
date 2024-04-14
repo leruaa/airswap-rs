@@ -7,7 +7,7 @@ use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::{Erc20Provider, TokenId};
+use erc20::{stores::BasicTokenStore, Erc20ProviderExt, TokenId};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
@@ -36,7 +36,8 @@ impl Action for GetTokensAction {
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry_client =
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
-        let erc20_provider = Erc20Provider::new(provider, chain_id as u8);
+
+        let mut token_store = BasicTokenStore::new();
 
         let supported_tokens = registry_client
             .get_tokens(self.maker_address.parse().unwrap())
@@ -44,8 +45,8 @@ impl Action for GetTokensAction {
         let mut tokens = vec![];
 
         for address in supported_tokens {
-            let token = erc20_provider
-                .retrieve_token(TokenId::Address(address))
+            let token = provider
+                .get_token(TokenId::Address(address), &mut token_store)
                 .await?;
 
             tokens.push(Token::from(token));
@@ -68,8 +69,8 @@ pub struct Token {
     pub symbol: String,
 }
 
-impl From<Arc<erc20::Token>> for Token {
-    fn from(value: Arc<erc20::Token>) -> Self {
+impl From<&erc20::Token> for Token {
+    fn from(value: &erc20::Token) -> Self {
         Self {
             address: format!("{:?}", value.address),
             symbol: value.symbol.clone(),

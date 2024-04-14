@@ -3,7 +3,7 @@ use std::sync::Arc;
 use airswap::{json_rpc::Pair, MakerClient, RegistryClient};
 use alloy::providers::{Provider, ProviderBuilder};
 use anyhow::Result;
-use erc20::{Erc20Provider, TokenId};
+use erc20::{stores::BasicTokenStore, Erc20ProviderExt, TokenId};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
@@ -42,26 +42,28 @@ impl Action for GetPricingAction {
         let registry_client =
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
 
+        let mut token_store = BasicTokenStore::new();
+
         let maker = registry_client
             .get_maker_with_supported_tokens(self.maker_address.parse()?)
             .await?;
 
         let maker_client = MakerClient::new(chain_id, maker);
 
-        let erc20_provider = Erc20Provider::new(provider, chain_id as u8);
+        let form_token = provider
+            .get_token(TokenId::Symbol(self.from_symbol.clone()), &mut token_store)
+            .await?;
 
-        let form_token = erc20_provider
-            .retrieve_token(TokenId::Symbol(self.from_symbol.clone()))
+        let from_token = format!("{:?}", form_token.address);
+
+        let to_token = provider
+            .get_token(TokenId::Symbol(self.to_symbol.clone()), &mut token_store)
             .await?;
-        let to_token = erc20_provider
-            .retrieve_token(TokenId::Symbol(self.to_symbol.clone()))
-            .await?;
+
+        let to_token = format!("{:?}", to_token.address);
 
         let pricing = maker_client
-            .get_pricing(vec![Pair::new(
-                format!("{:?}", form_token.address),
-                format!("{:?}", to_token.address),
-            )])
+            .get_pricing(vec![Pair::new(from_token, to_token)])
             .await?;
 
         println!("{pricing:#?}");
