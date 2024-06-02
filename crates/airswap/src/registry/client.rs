@@ -38,10 +38,10 @@ where
     N: Network,
 {
     let tx = N::TransactionRequest::default()
-        .with_input(call.abi_encode().into())
-        .with_to(to.into());
+        .with_input(call.abi_encode())
+        .with_to(to);
 
-    let result = provider.call(&tx, None).await?;
+    let result = provider.call(&tx).await?;
     let decoded = C::abi_decode_returns(&result, true)?;
 
     Ok(decoded)

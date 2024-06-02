@@ -7,7 +7,7 @@ use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::{stores::BasicTokenStore, Erc20ProviderExt, TokenId};
+use erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
@@ -31,7 +31,7 @@ impl GetTokensAction {
 #[async_trait::async_trait]
 impl Action for GetTokensAction {
     async fn execute(&self) -> Result<()> {
-        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?)?;
+        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry_client =

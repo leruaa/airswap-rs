@@ -6,10 +6,7 @@ use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::{
-    stores::{BasicTokenStore, TokenStore},
-    TokenId,
-};
+use erc20::{BasicTokenStore, TokenId, TokenStore};
 use futures::future::join_all;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -51,7 +48,7 @@ impl QuoteAction {
 #[async_trait::async_trait]
 impl Action for QuoteAction {
     async fn execute(&self) -> Result<()> {
-        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?)?;
+        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry_client =
