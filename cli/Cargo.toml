@@ -10,7 +10,6 @@ airswap = { path = "../crates/airswap" }
 erc20 = { workspace = true, features = ["known-tokens"] }
 alloy = { workspace = true, features = ["network", "providers", "rpc-client"] }
 num-traits = { workspace = true }
-ruint = { features = ["num-traits"] }
 clap = { version = "4.3.19", features = ["derive", "env"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 futures = "0.3"
