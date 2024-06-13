@@ -1,9 +1,12 @@
-use std::convert;
+use std::ops::Div;
 
+use alloy::hex::FromHexError;
+use bigdecimal::{BigDecimal, ParseBigDecimalError, Zero};
 use cynic::{http::ReqwestExt, GraphQlError, QueryBuilder};
+use itertools::Itertools;
 use thiserror::Error;
 
-use super::{Vote, SNAPSHOT_URL};
+use super::{AggregatedVote, ProposalGroup, Vote, SNAPSHOT_URL};
 
 mod types {
     use crate::claim::snapshot::schema;
@@ -11,8 +14,8 @@ mod types {
     use cynic::{QueryFragment, QueryVariables};
 
     #[derive(QueryVariables, Debug)]
-    pub struct VotesForProposalsVariables<'a> {
-        pub proposal_in: Option<Vec<Option<&'a str>>>,
+    pub struct VotesForProposalsVariables {
+        pub proposal_in: Option<Vec<Option<String>>>,
     }
 
     #[derive(QueryFragment, Debug)]
@@ -42,10 +45,17 @@ mod types {
 }
 
 pub async fn get_votes_for_proposals(
-    proposal_ids: Vec<&str>,
-) -> Result<Vec<Vote>, Vec<GraphQlError>> {
+    proposal_group: ProposalGroup,
+) -> Result<Vec<AggregatedVote>, Vec<GraphQlError>> {
+    let proposal_count = proposal_group.len() as u8;
     let operation = types::VotesForProposals::build(types::VotesForProposalsVariables {
-        proposal_in: Some(proposal_ids.into_iter().map(Option::Some).collect()),
+        proposal_in: Some(
+            proposal_group
+                .ids
+                .into_iter()
+                .map(|id| Option::Some(id.to_string()))
+                .collect(),
+        ),
     });
 
     let response = reqwest::Client::new()
@@ -58,12 +68,27 @@ pub async fn get_votes_for_proposals(
         Some(data) => match data.votes {
             Some(votes) => Ok(votes
                 .into_iter()
-                .filter_map(convert::identity)
+                .flatten()
                 .filter_map(|v| Vote::try_from(v).ok())
+                .into_grouping_map_by(|v| v.voter.clone())
+                .fold(
+                    (BigDecimal::zero(), 0_u8),
+                    |(acc_points, acc_vote_count), _, v| {
+                        (acc_points + v.points, acc_vote_count + 1)
+                    },
+                )
+                .into_iter()
+                .filter_map(|(voter, (points, vote_count))| {
+                    if vote_count == proposal_count {
+                        Some(AggregatedVote::new(voter, points.div(proposal_count)))
+                    } else {
+                        None
+                    }
+                })
                 .collect()),
-            None => todo!(),
+            None => Ok(vec![]),
         },
-        None => todo!(),
+        None => Ok(vec![]),
     }
 }
 
@@ -71,6 +96,10 @@ pub async fn get_votes_for_proposals(
 pub enum VoteError {
     #[error("No proposal")]
     NoProposal,
+    #[error("Invalid address")]
+    InvalidAddress(#[from] FromHexError),
+    #[error("Cann't parse decimal {0}")]
+    InvalidDecimal(#[from] ParseBigDecimalError),
 }
 
 impl TryFrom<types::Vote> for Vote {
@@ -78,11 +107,13 @@ impl TryFrom<types::Vote> for Vote {
 
     fn try_from(value: types::Vote) -> Result<Self, Self::Error> {
         let proposal = value.proposal.ok_or(VoteError::NoProposal)?;
+        let voter = value.voter.parse()?;
+        let points = BigDecimal::try_from(value.vp.unwrap_or_default())?;
 
         let vote = Vote {
             proposal_id: proposal.id,
-            voter: value.voter,
-            points: value.vp.unwrap_or_default(),
+            voter,
+            points,
         };
 
         Ok(vote)

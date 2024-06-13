@@ -1,9 +1,11 @@
-use std::{collections::HashMap, convert};
+use std::collections::HashMap;
 
+use alloy::hex::FromHexError;
 use cynic::{http::ReqwestExt, GraphQlError, QueryBuilder};
 use itertools::Itertools;
+use thiserror::Error;
 
-use super::{Proposal, ProposalInterval, SNAPSHOT_URL};
+use super::{ProposalGroup, ProposalInterval, SNAPSHOT_URL};
 
 mod types {
     use crate::claim::snapshot::schema;
@@ -30,7 +32,7 @@ mod types {
 }
 
 pub async fn get_grouped_proposals(
-) -> Result<HashMap<ProposalInterval, Vec<Proposal>>, Vec<GraphQlError>> {
+) -> Result<HashMap<ProposalInterval, ProposalGroup>, Vec<GraphQlError>> {
     let operation = types::Proposals::build(());
 
     let response = reqwest::Client::new()
@@ -43,10 +45,10 @@ pub async fn get_grouped_proposals(
         Some(data) => match data.proposals {
             Some(proposals) => Ok(proposals
                 .into_iter()
-                .filter_map(convert::identity)
+                .flatten()
                 .into_group_map_by(|p| ProposalInterval::from(p))
                 .into_iter()
-                .map(|(k, v)| (k, v.into_iter().map(Proposal::from).collect()))
+                .filter_map(|(k, v)| ProposalGroup::try_from(v).ok().map(|g| (k, g)))
                 .collect()),
             None => Ok(HashMap::new()),
         },
@@ -66,13 +68,25 @@ impl From<&types::Proposal> for ProposalInterval {
     }
 }
 
-impl From<types::Proposal> for Proposal {
-    fn from(value: types::Proposal) -> Self {
-        Self {
-            id: value.id,
-            title: value.title,
-            snapshot: value.snapshot,
-            state: value.state,
-        }
+#[derive(Error, Debug)]
+pub enum ProposalError {
+    #[error("Invalid id")]
+    InvalidId(#[from] FromHexError),
+}
+
+impl TryFrom<Vec<types::Proposal>> for ProposalGroup {
+    type Error = ProposalError;
+
+    fn try_from(value: Vec<types::Proposal>) -> Result<Self, Self::Error> {
+        value
+            .into_iter()
+            .try_fold(ProposalGroup::default(), |mut acc, p| match p.id.parse() {
+                Ok(p) => {
+                    acc.ids.push(p);
+                    acc.ids.sort();
+                    Ok(acc)
+                }
+                Err(err) => Err(ProposalError::InvalidId(err)),
+            })
     }
 }
