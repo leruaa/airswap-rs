@@ -1,0 +1,19 @@
+{
+  "name": "claim-leafs-builder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "esrun src/main.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bignumber.js": "^9.1.2",
+    "esrun": "^3.2.26",
+    "graphql-request": "^7.0.1",
+    "merkletreejs": "^0.3.11",
+    "viem": "^2.14.2"
+  }
+}
