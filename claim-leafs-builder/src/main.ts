@@ -1,10 +1,11 @@
 import { buildMerkleLeaf, buildMerkleTree } from "./merkle";
 import { fetchProposals, getGroupHash } from "./proposals";
 import { fetchVotes } from "./votes";
-
-console.log("Hello");
+import * as fs from "fs";
 
 let proposals = await fetchProposals();
+
+let output: any = {};
 
 for (let group of proposals) {
   let ids = group.map(g => g.id);
@@ -13,5 +14,10 @@ for (let group of proposals) {
   let leaves = votes.map(buildMerkleLeaf);
   let merkleTree = buildMerkleTree(leaves);
 
-  console.log(tree, merkleTree.getHexRoot());
+  output[tree] = {
+    "root": merkleTree.getHexRoot(),
+    "leaves": leaves
+  };
 }
+
+fs.writeFileSync('../crates/airswap/proposals/proposals.json', JSON.stringify(output, null, 2));
