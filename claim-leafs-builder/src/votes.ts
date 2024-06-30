@@ -1,5 +1,6 @@
 import { gql, request } from "graphql-request";
 import { SNAPSHOT_API_ENDPOINT, SNAPSHOT_SPACE, SNAPSHOT_START_TIMESTAMP } from "./snapshot";
+import BigNumber from "bignumber.js";
 
 const VOTES_FOR_PROPOSALS_QUERY = (proposalIds?: string[]) => gql`
   query {
@@ -17,7 +18,7 @@ const VOTES_FOR_PROPOSALS_QUERY = (proposalIds?: string[]) => gql`
 
 export type Vote = {
   address: `0x${string}`;
-  points: number;
+  points: string;
 };
 
 type VotesByProposalQueryResult = {
@@ -64,7 +65,13 @@ export const fetchVotes = async (proposalIds: string[]): Promise<Vote[]> => {
   const qualifyingVoters = Object.values(votesByUser)
     // filter out anyone who didn't vote on all of the proposals.
     .filter(userData => userData.totalVotesCast === proposalIds.length)
-    .map(userData => { return { address: userData.address, points: userData.totalPoints / proposalIds.length } });
+    .map(userData => {
+      let points =
+        new BigNumber(userData.totalPoints / proposalIds.length)
+          .multipliedBy(10 ** 4)
+          .toFixed(0, BigNumber.ROUND_FLOOR);
+      return { address: userData.address, points };
+    });
 
   return qualifyingVoters;
 };

@@ -16,7 +16,7 @@ for (let group of proposals) {
 
   output[tree] = {
     "root": merkleTree.getHexRoot(),
-    "leaves": leaves
+    "votes": votes
   };
 }
 

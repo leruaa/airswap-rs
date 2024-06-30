@@ -4,11 +4,7 @@ import { encodePacked, keccak256 } from "viem";
 import { Vote } from "./votes";
 
 export const buildMerkleLeaf = (vote: Vote) => {
-  let points = BigInt(
-    new BigNumber(vote.points)
-      .multipliedBy(10 ** 4)
-      .toFixed(0, BigNumber.ROUND_FLOOR),
-  );
+  let points = BigInt(vote.points);
 
   return keccak256(
     encodePacked(
