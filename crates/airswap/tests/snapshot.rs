@@ -1,21 +1,60 @@
-use airswap::claim;
+use std::{collections::HashMap, env, fs::File};
 
-#[tokio::test]
-async fn test_grouped_proposals() {
-    let proposals = claim::get_grouped_proposals().await.unwrap();
-
-    assert!(!proposals.is_empty());
-}
+use airswap::{
+    claim::{GroupedProposal, MerkleTree, ProposalGroup},
+    pool::{rootsByTreeReturn, PoolContractInstance},
+};
+use alloy::providers::ProviderBuilder;
+use alloy::{
+    hex,
+    primitives::{address, B256},
+};
+use dotenv::dotenv;
+use itertools::Itertools;
 
 #[tokio::test]
 async fn test_votes_for_proposals() {
-    let votes = claim::get_votes_for_proposals(vec![
-        "0x16348b60360fd13e7e9a44ffec492a15feb9100f6224c051d0cf4bd8197fc0c5",
-        "0xe1ed5c1f03f27dd98a6db947491476ee9bdd5a42fa69e3b4dd0945f301a25467",
-        "0x41ad55c33632abb0f419de80f62b583c72ce6c74b674d9b77e5ce5d958f6dbcb",
-    ])
-    .await
+    dotenv().ok();
+
+    let eth_rpc = env::var("ETH_RPC_URL").unwrap();
+
+    let group = ProposalGroup::new(vec![
+        hex!("6509ffd1d00d4862e94bd250d7dd0abbb77054c5ab28c289f614362bee805866").into(),
+        hex!("77de42127551bd8007cf8493b1e584f0775f195a20f37583c5d267da5369aa49").into(),
+    ]);
+
+    let pool_instance = PoolContractInstance::new(
+        address!("bbcec987E4C189FCbAB0a2534c77b3ba89229F11"),
+        ProviderBuilder::new().on_http(eth_rpc.parse().unwrap()),
+    );
+
+    let tree = group.hash();
+
+    println!("tree: {}", tree);
+
+    let rootsByTreeReturn { _0: root } = pool_instance.rootsByTree(tree).call().await.unwrap();
+
+    println!("root: {}", root);
+
+    let proposals = serde_json::from_reader::<_, HashMap<B256, GroupedProposal>>(
+        File::open("./proposals/proposals.json").unwrap(),
+    )
     .unwrap();
 
-    assert!(!votes.is_empty());
+    // Monthly Update: 1 Jan 2024
+    let proposal = proposals.get(&tree).unwrap();
+
+    let tree = MerkleTree::from_leaves(proposal.votes.iter().map(B256::from).sorted());
+
+    for vote in &proposal.votes {
+        let proof = tree.get_proof(&B256::from(vote)).unwrap();
+
+        let result = pool_instance
+            .verify(vote.address, root, vote.points, proof)
+            .call()
+            .await
+            .unwrap();
+
+        assert!(result._0);
+    }
 }

@@ -7,7 +7,7 @@ edition = "2021"
 
 [features]
 default = ["claim"]
-claim = ["dep:cynic", "dep:itertools"]
+claim = ["dep:cynic", "dep:itertools", "dep:custom_float", 'dep:ruint']
 
 [dependencies]
 tokio = { version = "1", features = ["sync", "time"] }

@@ -1,2 +1,10 @@
-mod snapshot;
-pub use snapshot::{get_grouped_proposals, get_votes_for_proposals};
+mod merkle;
+pub use merkle::MerkleTree;
+
+mod grouped_proposals;
+pub use grouped_proposals::GroupedProposal;
+
+mod proposal_group;
+pub use proposal_group::ProposalGroup;
+
+mod vote;

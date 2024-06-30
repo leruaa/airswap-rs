@@ -6,6 +6,9 @@ pub use maker::{
     build_buy_order, build_sell_order, json_rpc, MakerClient, MakerConfig, MakerError,
     MakerService, ThresholdLayer,
 };
+#[cfg(feature = "claim")]
+pub mod claim;
+
 pub use registry::{
     Maker, MakerWithSupportedTokens, RegistryClient, RegistryError, RegistryVersion,
 };
