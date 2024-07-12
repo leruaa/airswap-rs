@@ -1,6 +1,5 @@
 use alloy::primitives::{Address, FixedBytes, U256, U64};
 use serde::Deserialize;
-use thiserror::Error;
 
 use super::{Response, ResponseDecodeError, ResponseResult, ResultPayload, Signature};
 
@@ -42,10 +41,6 @@ impl Ord for OrderPayload {
         self.signer_amount.cmp(&other.signer_amount)
     }
 }
-
-#[derive(Error, Debug)]
-#[error("{0}")]
-pub struct EncodeError(String);
 
 impl TryFrom<Response> for OrderPayload {
     type Error = ResponseDecodeError;
