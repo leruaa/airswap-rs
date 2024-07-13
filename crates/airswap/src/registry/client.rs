@@ -92,7 +92,7 @@ pub struct RegistryClient {
 impl RegistryClient {
     pub fn new<P, T, N>(provider: P, chain_id: u64, version: RegistryVersion) -> Self
     where
-        P: Provider<T, N> + 'static,
+        P: Provider<T, N>,
         N: Network,
         T: Transport + Clone,
     {
