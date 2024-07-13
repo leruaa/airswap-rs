@@ -3,6 +3,6 @@ members = ["cli", "crates/*"]
 resolver = "2"
 
 [workspace.dependencies]
-erc20 = { git = "https://github.com/leruaa/erc20-rs" }
+alloy-erc20 = { git = "https://github.com/leruaa/alloy-erc20" }
 alloy = { git = "https://github.com/alloy-rs/alloy" }
 num-traits = "0.2"

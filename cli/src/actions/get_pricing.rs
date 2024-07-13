@@ -3,7 +3,7 @@ use std::sync::Arc;
 use airswap::{json_rpc::Pair, MakerClient, RegistryClient};
 use alloy::providers::{Provider, ProviderBuilder};
 use anyhow::Result;
-use erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
+use alloy_erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;

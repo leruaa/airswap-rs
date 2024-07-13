@@ -6,7 +6,7 @@ use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::{BasicTokenStore, TokenId, TokenStore};
+use alloy_erc20::{BasicTokenStore, TokenId, TokenStore};
 use futures::future::join_all;
 use itertools::Itertools;
 use num_traits::ToPrimitive;

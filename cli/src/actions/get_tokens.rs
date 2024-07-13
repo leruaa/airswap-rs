@@ -7,7 +7,7 @@ use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
+use alloy_erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
