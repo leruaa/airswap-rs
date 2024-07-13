@@ -1,8 +1,6 @@
-use std::sync::Arc;
-
 use airswap::RegistryClient;
 use alloy::providers::{Provider, ProviderBuilder};
-use alloy_erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
+use alloy_erc20::{BasicTokenStore, Erc20ProviderExt};
 use anyhow::Result;
 use cli_table::{
     format::{Border, Separator},
@@ -44,9 +42,7 @@ impl Action for GetTokensAction {
         let mut tokens = vec![];
 
         for address in supported_tokens {
-            let token = provider
-                .get_token(TokenId::Address(address), &mut token_store)
-                .await?;
+            let token = provider.get_token(address, &mut token_store).await?;
 
             tokens.push(Token::from(token));
         }
@@ -68,8 +64,8 @@ pub struct Token {
     pub symbol: String,
 }
 
-impl From<&erc20::Token> for Token {
-    fn from(value: &erc20::Token) -> Self {
+impl From<&alloy_erc20::Token> for Token {
+    fn from(value: &alloy_erc20::Token) -> Self {
         Self {
             address: format!("{:?}", value.address),
             symbol: value.symbol.clone(),

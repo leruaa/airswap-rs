@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use airswap::{json_rpc::Pair, MakerClient, RegistryClient};
 use alloy::providers::{Provider, ProviderBuilder};
 use alloy_erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
@@ -50,13 +48,16 @@ impl Action for GetPricingAction {
         let maker_client = MakerClient::new(chain_id, maker);
 
         let form_token = provider
-            .get_token(TokenId::Symbol(self.from_symbol.clone()), &mut token_store)
+            .get_token(
+                self.from_symbol.parse::<TokenId>().unwrap(),
+                &mut token_store,
+            )
             .await?;
 
         let from_token = format!("{:?}", form_token.address);
 
         let to_token = provider
-            .get_token(TokenId::Symbol(self.to_symbol.clone()), &mut token_store)
+            .get_token(self.to_symbol.parse::<TokenId>().unwrap(), &mut token_store)
             .await?;
 
         let to_token = format!("{:?}", to_token.address);

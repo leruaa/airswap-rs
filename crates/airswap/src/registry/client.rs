@@ -21,7 +21,7 @@ sol!(LegacyRegistryContract, "abi/registry.json");
 sol!(RegistryV4Contract, "abi/registry_v4.json");
 
 #[async_trait]
-pub trait RegistryContract: Send + Sync {
+pub trait RegistryContract {
     async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError>;
     async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError>;
     async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError>;
@@ -85,53 +85,61 @@ fn normalized_maker(account: Address, mut url: String) -> Maker {
     Maker::new(account, url)
 }
 
-pub struct RegistryClient {
-    inner: Box<dyn RegistryContract>,
+pub enum RegistryClient<P, T, N> {
+    Legacy(LegacyRegistry<P, T, N>),
+    V4(RegistryV4<P, T, N>),
 }
 
-impl RegistryClient {
-    pub fn new<P, T, N>(provider: P, chain_id: u64, version: RegistryVersion) -> Self
-    where
-        P: Provider<T, N>,
-        N: Network,
-        T: Transport + Clone,
-    {
+impl<P, T, N> RegistryClient<P, T, N>
+where
+    P: Provider<T, N>,
+    N: Network,
+    T: Transport + Clone,
+{
+    pub fn new(provider: P, chain_id: u64, version: RegistryVersion) -> Self {
         match version {
-            RegistryVersion::Legacy => Self {
-                inner: Box::new(LegacyRegistry::new(provider, chain_id, version)),
-            },
-            RegistryVersion::V4 => Self {
-                inner: Box::new(RegistryV4::new(provider, chain_id, version)),
-            },
+            RegistryVersion::Legacy => {
+                Self::Legacy(LegacyRegistry::new(provider, chain_id, version))
+            }
+            RegistryVersion::V4 => Self::V4(RegistryV4::new(provider, chain_id, version)),
         }
     }
 
     pub async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError> {
-        self.inner.get_maker(address).await
+        match self {
+            RegistryClient::Legacy(registry) => registry.get_maker(address).await,
+            RegistryClient::V4(registry) => registry.get_maker(address).await,
+        }
     }
 
     pub async fn get_maker_with_supported_tokens(
         &self,
         address: Address,
     ) -> Result<MakerWithSupportedTokens, RegistryError> {
-        let maker = self.inner.get_maker(address).await?;
+        let maker = self.get_maker(address).await?;
         let supported_tokens = self.get_tokens(maker.address).await?;
 
         Ok(MakerWithSupportedTokens::new(maker, supported_tokens))
     }
 
     pub async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
-        self.inner.get_makers().await
+        match self {
+            RegistryClient::Legacy(registry) => registry.get_makers().await,
+            RegistryClient::V4(registry) => registry.get_makers().await,
+        }
     }
 
     pub async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError> {
-        self.inner.get_tokens(maker_address).await
+        match self {
+            RegistryClient::Legacy(registry) => registry.get_tokens(maker_address).await,
+            RegistryClient::V4(registry) => registry.get_tokens(maker_address).await,
+        }
     }
 
     pub async fn get_makers_with_supported_tokens(
         &self,
     ) -> Result<Vec<MakerWithSupportedTokens>, RegistryError> {
-        let futures = self.inner.get_makers().await?.into_iter().map(|m| {
+        let futures = self.get_makers().await?.into_iter().map(|m| {
             self.get_tokens(m.address)
                 .map_ok(|supported_tokens| MakerWithSupportedTokens::new(m, supported_tokens))
         });
