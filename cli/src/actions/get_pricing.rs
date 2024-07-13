@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use airswap::{json_rpc::Pair, MakerClient, RegistryClient};
 use alloy::providers::{Provider, ProviderBuilder};
-use anyhow::Result;
 use alloy_erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
+use anyhow::Result;
 use num_traits::ToPrimitive;
 
 use crate::cli::Config;
@@ -37,7 +37,6 @@ impl GetPricingAction {
 impl Action for GetPricingAction {
     async fn execute(&self) -> Result<()> {
         let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
-        let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let registry_client =
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);

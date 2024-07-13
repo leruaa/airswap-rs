@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use std::marker::PhantomData;
 
 use alloy::primitives::Address;
 use alloy::sol_types::{SolCall, SolEvent};
 use alloy::{
     network::{Network, TransactionBuilder},
-    providers::{Provider, RootProvider},
+    providers::Provider,
     rpc::types::eth::Filter,
     sol,
     transports::{Transport, TransportError},
@@ -27,15 +27,12 @@ pub trait RegistryContract: Send + Sync {
     async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError>;
 }
 
-async fn call<C, T, N>(
-    provider: &Arc<RootProvider<T, N>>,
-    call: C,
-    to: Address,
-) -> Result<C::Return, RegistryError>
+async fn call<P, T, N, C>(provider: &P, call: C, to: Address) -> Result<C::Return, RegistryError>
 where
-    C: SolCall + Send + Sync,
+    P: Provider<T, N>,
     T: Transport + Clone,
     N: Network,
+    C: SolCall + Send + Sync,
 {
     let tx = N::TransactionRequest::default()
         .with_input(call.abi_encode())
@@ -47,14 +44,15 @@ where
     Ok(decoded)
 }
 
-async fn get_makers_events<E, T, N>(
-    provider: &Arc<RootProvider<T, N>>,
+async fn get_makers_events<P, T, N, E>(
+    provider: &P,
     config: &RegistryConfig,
 ) -> Result<Vec<E>, RegistryError>
 where
-    E: SolEvent,
+    P: Provider<T, N>,
     T: Transport + Clone,
     N: Network,
+    E: SolEvent,
 {
     let filter = Filter::new()
         .from_block(config.from_block)
@@ -92,12 +90,9 @@ pub struct RegistryClient {
 }
 
 impl RegistryClient {
-    pub fn new<T, N>(
-        provider: Arc<RootProvider<T, N>>,
-        chain_id: u64,
-        version: RegistryVersion,
-    ) -> Self
+    pub fn new<P, T, N>(provider: P, chain_id: u64, version: RegistryVersion) -> Self
     where
+        P: Provider<T, N> + 'static,
         N: Network,
         T: Transport + Clone,
     {
@@ -147,22 +142,28 @@ impl RegistryClient {
     }
 }
 
-pub struct LegacyRegistry<N, T> {
-    provider: Arc<RootProvider<N, T>>,
+pub struct LegacyRegistry<P, T, N> {
+    provider: P,
     config: RegistryConfig,
+    phantom: PhantomData<(T, N)>,
 }
 
-impl<N, T> LegacyRegistry<N, T> {
-    pub fn new(provider: Arc<RootProvider<N, T>>, chain_id: u64, version: RegistryVersion) -> Self {
+impl<P, T, N> LegacyRegistry<P, T, N> {
+    pub fn new(provider: P, chain_id: u64, version: RegistryVersion) -> Self {
         let config = RegistryConfig::new(chain_id, version);
 
-        Self { provider, config }
+        Self {
+            provider,
+            config,
+            phantom: PhantomData,
+        }
     }
 }
 
 #[async_trait]
-impl<T, N> RegistryContract for LegacyRegistry<T, N>
+impl<P, T, N> RegistryContract for LegacyRegistry<P, T, N>
 where
+    P: Provider<T, N>,
     T: Transport + Clone + Send + Sync,
     N: Network + Send + Sync,
 {
@@ -178,12 +179,14 @@ where
     }
 
     async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
-        let makers =
-            get_makers_events::<LegacyRegistryContract::SetURL, _, _>(&self.provider, &self.config)
-                .await?
-                .into_iter()
-                .map(|e| normalized_maker(e.account, e.url))
-                .collect();
+        let makers = get_makers_events::<_, _, _, LegacyRegistryContract::SetURL>(
+            &self.provider,
+            &self.config,
+        )
+        .await?
+        .into_iter()
+        .map(|e| normalized_maker(e.account, e.url))
+        .collect();
 
         Ok(makers)
     }
@@ -200,22 +203,28 @@ where
     }
 }
 
-pub struct RegistryV4<T, N> {
-    provider: Arc<RootProvider<T, N>>,
+pub struct RegistryV4<P, T, N> {
+    provider: P,
     config: RegistryConfig,
+    phantom: PhantomData<(T, N)>,
 }
 
-impl<T, N> RegistryV4<T, N> {
-    pub fn new(provider: Arc<RootProvider<T, N>>, chain_id: u64, version: RegistryVersion) -> Self {
+impl<P, T, N> RegistryV4<P, T, N> {
+    pub fn new(provider: P, chain_id: u64, version: RegistryVersion) -> Self {
         let config = RegistryConfig::new(chain_id, version);
 
-        Self { provider, config }
+        Self {
+            provider,
+            config,
+            phantom: PhantomData,
+        }
     }
 }
 
 #[async_trait]
-impl<T, N> RegistryContract for RegistryV4<T, N>
+impl<P, T, N> RegistryContract for RegistryV4<P, T, N>
 where
+    P: Provider<T, N>,
     T: Transport + Clone + Send + Sync,
     N: Network + Send + Sync,
 {
@@ -231,7 +240,7 @@ where
     }
 
     async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
-        let makers = get_makers_events::<RegistryV4Contract::SetServerURL, _, _>(
+        let makers = get_makers_events::<_, _, _, RegistryV4Contract::SetServerURL>(
             &self.provider,
             &self.config,
         )
