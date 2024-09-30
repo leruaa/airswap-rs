@@ -4,5 +4,5 @@ resolver = "2"
 
 [workspace.dependencies]
 alloy-erc20 = "0.2"
-alloy = "0.2"
+alloy = "0.3"
 num-traits = "0.2"

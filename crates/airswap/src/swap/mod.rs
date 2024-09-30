@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use alloy::primitives::{Address, U256};
+use alloy::primitives::Address;
 use alloy::{
     network::Network,
     providers::{Provider, RootProvider},
@@ -75,7 +75,7 @@ pub async fn get_swap_events_stream(
     let response = front_end
         .send(req.serialize()?)
         .await?
-        .deser_success::<U256>()
+        .deser_success()
         .unwrap();
 
     let subscription_id = match response.payload {
