@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use super::{Pricing, Response, ResponseDecodeError, ResponseResult, ResultPayload};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(transparent)]
 pub struct PricingPayload(pub Vec<Pricing>);
 

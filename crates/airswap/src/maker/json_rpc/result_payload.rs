@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use super::{ErrorPayload, OrderPayload, PricingPayload};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum ResultPayload {
     SignerSideOrder(Box<OrderPayload>),

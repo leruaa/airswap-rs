@@ -3,7 +3,7 @@ use serde_json::Number;
 
 use super::Level;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Pricing {
     pub ask: Vec<Level>,

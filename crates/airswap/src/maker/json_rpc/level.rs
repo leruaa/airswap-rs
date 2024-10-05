@@ -7,7 +7,7 @@ use serde::{
 };
 use serde_json::Number;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Level {
     quantity: Number,
     price: Number,
