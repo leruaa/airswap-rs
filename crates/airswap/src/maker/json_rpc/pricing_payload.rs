@@ -24,6 +24,7 @@ impl TryFrom<ResponseResult> for PricingPayload {
     fn try_from(value: ResponseResult) -> Result<Self, Self::Error> {
         match value.result {
             ResultPayload::Pricing(pricings) => Ok(*pricings),
+            ResultPayload::Error(error) => Err(ResponseDecodeError::Remote(*error)),
             _ => Err(ResponseDecodeError::WrongVariant),
         }
     }

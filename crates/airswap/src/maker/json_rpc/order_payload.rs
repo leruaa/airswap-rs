@@ -60,7 +60,7 @@ impl TryFrom<ResponseResult> for OrderPayload {
     fn try_from(value: ResponseResult) -> Result<Self, Self::Error> {
         match value.result {
             ResultPayload::SignerSideOrder(signer_side_order) => Ok(*signer_side_order),
-            ResultPayload::Error(err) => Err(ResponseDecodeError::Remote(*err)),
+            ResultPayload::Error(error) => Err(ResponseDecodeError::Remote(*error)),
             _ => Err(ResponseDecodeError::WrongVariant),
         }
     }
