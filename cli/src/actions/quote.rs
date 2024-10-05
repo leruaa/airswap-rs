@@ -1,12 +1,12 @@
 use airswap::{MakerClient, MakerWithSupportedTokens, RegistryClient};
 use alloy::primitives::{utils::parse_units, Address};
 use alloy::providers::{Provider, ProviderBuilder};
+use alloy_erc20::{BasicTokenStore, TokenId, TokenStore};
 use anyhow::{anyhow, Result};
 use cli_table::{
     format::{Border, Separator},
     print_stdout, Table,
 };
-use alloy_erc20::{BasicTokenStore, TokenId, TokenStore};
 use futures::future::join_all;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
@@ -56,16 +56,16 @@ impl Action for QuoteAction {
 
         let mut store = BasicTokenStore::new();
 
-        store.insert_known_tokens(chain_id as u8);
+        store.insert_known_tokens(chain_id);
 
         let from_address = "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"
             .parse()
             .unwrap();
         let from_token = store
-            .get(chain_id as u8, TokenId::Symbol(self.from_symbol.clone()))
+            .get(chain_id, TokenId::Symbol(self.from_symbol.clone()))
             .ok_or(anyhow!("The token {} can't be found", &self.from_symbol))?;
         let to_token = store
-            .get(chain_id as u8, TokenId::Symbol(self.to_symbol.clone()))
+            .get(chain_id, TokenId::Symbol(self.to_symbol.clone()))
             .ok_or(anyhow!("The token {} can't be found", &self.to_symbol))?;
         let makers = registry_client
             .get_makers_with_supported_tokens()

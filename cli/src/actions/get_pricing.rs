@@ -1,6 +1,6 @@
 use airswap::{json_rpc::Pair, MakerClient, RegistryClient};
 use alloy::providers::{Provider, ProviderBuilder};
-use alloy_erc20::{BasicTokenStore, Erc20ProviderExt, TokenId};
+use alloy_erc20::{BasicTokenStore, Erc20ProviderExt, TokenId, TokenStore};
 use anyhow::Result;
 use num_traits::ToPrimitive;
 
@@ -40,6 +40,8 @@ impl Action for GetPricingAction {
             RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
 
         let mut token_store = BasicTokenStore::new();
+
+        token_store.insert_known_tokens(chain_id);
 
         let maker = registry_client
             .get_maker_with_supported_tokens(self.maker_address.parse()?)
