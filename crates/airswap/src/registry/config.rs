@@ -15,7 +15,7 @@ impl RegistryConfig {
                 from_block: 12782029,
             },
             (1, RegistryVersion::V4) => Self {
-                address: address!("f5E6730c5A915b6f47AeAB0952655036aE2e73E9"),
+                address: address!("e30E9c001dEFb5F0B04fD21662454A2427F4257A"),
                 from_block: 17215828,
             },
             (5, RegistryVersion::Legacy) => Self {
