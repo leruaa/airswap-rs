@@ -43,7 +43,7 @@ impl MakerService {
                 .maker
                 .can_handle(&[params.order.sender_token, params.order.signer_token]),
             Payload::Pricing(_) => true,
-            Payload::AllPricing(_) => true,
+            Payload::AllPricing => true,
         }
     }
 

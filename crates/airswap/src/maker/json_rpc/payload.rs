@@ -8,5 +8,5 @@ pub enum Payload {
     SignerSideOrder(SignerSideOrderParams),
     SenderSideOrder(SenderSideOrderParams),
     Pricing(PricingParams),
-    AllPricing(Vec<String>),
+    AllPricing,
 }

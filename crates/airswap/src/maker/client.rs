@@ -92,7 +92,7 @@ impl MakerClient {
     }
 
     pub async fn get_all_pricing(&self) -> Result<PricingPayload, MakerError> {
-        let payload = self.post(Payload::AllPricing(vec![])).await?.try_into()?;
+        let payload = self.post(Payload::AllPricing).await?.try_into()?;
 
         Ok(payload)
     }

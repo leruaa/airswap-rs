@@ -24,7 +24,7 @@ impl From<Payload> for Request {
             Payload::SignerSideOrder(_) => String::from("getSignerSideOrderERC20"),
             Payload::SenderSideOrder(_) => String::from("getSenderSideOrderERC20"),
             Payload::Pricing(_) => String::from("getPricingERC20"),
-            Payload::AllPricing(_) => String::from("getAllPricingERC20"),
+            Payload::AllPricing => String::from("getAllPricingERC20"),
         };
 
         Request {
