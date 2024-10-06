@@ -10,7 +10,7 @@ use crate::{
 
 use super::{
     config::MakerConfig,
-    json_rpc::{OrderPayload, Payload, SignerSideOrderParams},
+    json_rpc::{OrderPayload, Payload, ProtocolsPayload, SignerSideOrderParams},
     MakerError, MakerService,
 };
 
@@ -28,6 +28,12 @@ impl MakerClient {
             chain_id,
             config,
         }
+    }
+
+    pub async fn get_protocols(&self) -> Result<ProtocolsPayload, MakerError> {
+        let payload = self.post(Payload::Protocols).await?.try_into()?;
+
+        Ok(payload)
     }
 
     pub async fn get_buy_quote(

@@ -36,6 +36,7 @@ impl MakerService {
 
     fn can_handle(&self, payload: &Payload) -> bool {
         match payload {
+            Payload::Protocols => true,
             Payload::SignerSideOrder(params) => self
                 .maker
                 .can_handle(&[params.order.sender_token, params.order.signer_token]),

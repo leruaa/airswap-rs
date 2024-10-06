@@ -21,6 +21,7 @@ impl From<Payload> for Request {
             .to_string();
 
         let method = match &params {
+            Payload::Protocols => String::from("getProtocols"),
             Payload::SignerSideOrder(_) => String::from("getSignerSideOrderERC20"),
             Payload::SenderSideOrder(_) => String::from("getSenderSideOrderERC20"),
             Payload::Pricing(_) => String::from("getPricingERC20"),

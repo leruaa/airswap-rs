@@ -4,7 +4,9 @@ use airswap::RegistryVersion;
 use alloy::primitives::Address;
 use clap::{Args, Parser, Subcommand};
 
-use crate::actions::{Action, GetMakersAction, GetPricingAction, GetTokensAction, QuoteAction};
+use crate::actions::{
+    Action, GetMakersAction, GetPricingAction, GetProtocolsAction, GetTokensAction, QuoteAction,
+};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -37,6 +39,7 @@ pub enum RegistryCommands {
 
 #[derive(Clone, Subcommand)]
 pub enum MakerCommands {
+    Protocols,
     Tokens,
     Pricing {
         from_symbol: String,
@@ -90,6 +93,10 @@ impl From<&Cli> for BoxedAction {
                 }
             },
             Commands::Maker { address, command } => match command {
+                MakerCommands::Protocols => BoxedAction(Box::new(GetProtocolsAction::new(
+                    cli.config.clone(),
+                    address.clone(),
+                ))),
                 MakerCommands::Tokens => BoxedAction(Box::new(GetTokensAction::new(
                     cli.config.clone(),
                     address.clone(),
