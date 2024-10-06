@@ -27,6 +27,10 @@ pub static KNOWN_MAKERS: Lazy<HashMap<Address, String>> = Lazy::new(|| {
             String::from("Alphalab"),
         ),
         (
+            address!("e0d90babe0081cf34328270620cd127eab8073db"),
+            String::from("Altono"),
+        ),
+        (
             address!("0F4A4B5A9935544190a6eAf34ec5A343738D4166"),
             String::from("N"),
         ),
