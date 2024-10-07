@@ -13,9 +13,7 @@ use async_trait::async_trait;
 use futures::{future::try_join_all, TryFutureExt};
 use thiserror::Error;
 
-use crate::{Maker, MakerWithSupportedTokens};
-
-use super::{config::RegistryConfig, RegistryVersion};
+use crate::{Config, Maker, MakerWithSupportedTokens, ProtocolVersion};
 
 sol!(LegacyRegistryContract, "abi/registry.json");
 sol!(RegistryV4Contract, "abi/registry_v4.json");
@@ -46,7 +44,7 @@ where
 
 async fn get_makers_events<P, T, N, E>(
     provider: &P,
-    config: &RegistryConfig,
+    config: &Config,
 ) -> Result<Vec<E>, RegistryError>
 where
     P: Provider<T, N>,
@@ -55,8 +53,8 @@ where
     E: SolEvent,
 {
     let filter = Filter::new()
-        .from_block(config.from_block)
-        .address(config.address)
+        .from_block(config.registry_from_block)
+        .address(config.registry_address)
         .event(E::SIGNATURE);
 
     let set_url_events = provider.get_logs(&filter).await?;
@@ -96,12 +94,10 @@ where
     N: Network,
     T: Transport + Clone,
 {
-    pub fn new(provider: P, chain_id: u64, version: RegistryVersion) -> Self {
-        match version {
-            RegistryVersion::Legacy => {
-                Self::Legacy(LegacyRegistry::new(provider, chain_id, version))
-            }
-            RegistryVersion::V4 => Self::V4(RegistryV4::new(provider, chain_id, version)),
+    pub fn new(provider: P, config: Config) -> Self {
+        match config.protocol_version {
+            ProtocolVersion::Legacy => Self::Legacy(LegacyRegistry::new(provider, config)),
+            _ => Self::V4(RegistryV4::new(provider, config)),
         }
     }
 
@@ -152,14 +148,12 @@ where
 
 pub struct LegacyRegistry<P, T, N> {
     provider: P,
-    config: RegistryConfig,
+    config: Config,
     phantom: PhantomData<(T, N)>,
 }
 
 impl<P, T, N> LegacyRegistry<P, T, N> {
-    pub fn new(provider: P, chain_id: u64, version: RegistryVersion) -> Self {
-        let config = RegistryConfig::new(chain_id, version);
-
+    pub fn new(provider: P, config: Config) -> Self {
         Self {
             provider,
             config,
@@ -179,7 +173,7 @@ where
         let url = call(
             &self.provider,
             LegacyRegistryContract::stakerURLsCall::new((address,)),
-            self.config.address,
+            self.config.registry_address,
         )
         .await?;
 
@@ -203,7 +197,7 @@ where
         let x = call(
             &self.provider,
             LegacyRegistryContract::getSupportedTokensCall::new((maker_address,)),
-            self.config.address,
+            self.config.registry_address,
         )
         .await?;
 
@@ -213,14 +207,12 @@ where
 
 pub struct RegistryV4<P, T, N> {
     provider: P,
-    config: RegistryConfig,
+    config: Config,
     phantom: PhantomData<(T, N)>,
 }
 
 impl<P, T, N> RegistryV4<P, T, N> {
-    pub fn new(provider: P, chain_id: u64, version: RegistryVersion) -> Self {
-        let config = RegistryConfig::new(chain_id, version);
-
+    pub fn new(provider: P, config: Config) -> Self {
         Self {
             provider,
             config,
@@ -240,7 +232,7 @@ where
         let url = call(
             &self.provider,
             RegistryV4Contract::stakerServerURLsCall::new((address,)),
-            self.config.address,
+            self.config.registry_address,
         )
         .await?;
 
@@ -264,7 +256,7 @@ where
         let x = call(
             &self.provider,
             RegistryV4Contract::getTokensForStakerCall::new((maker_address,)),
-            self.config.address,
+            self.config.registry_address,
         )
         .await?;
 

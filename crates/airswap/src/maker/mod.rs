@@ -1,12 +1,10 @@
 mod client;
-mod config;
 mod error;
 pub mod json_rpc;
 mod service;
 
 use alloy::primitives::{Address, U256};
 pub use client::MakerClient;
-pub use config::MakerConfig;
 pub use error::MakerError;
 pub use service::{MakerService, ThresholdLayer};
 

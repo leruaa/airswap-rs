@@ -1,4 +1,4 @@
-use airswap::RegistryClient;
+use airswap::{Config as AirswapConfig, RegistryClient};
 use alloy::providers::{Provider, ProviderBuilder};
 use alloy_erc20::{BasicTokenStore, Erc20ProviderExt};
 use anyhow::Result;
@@ -31,8 +31,8 @@ impl Action for GetTokensAction {
     async fn execute(&self) -> Result<()> {
         let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
-        let registry_client =
-            RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
+        let config = AirswapConfig::new(chain_id, self.config.protocol_version);
+        let registry_client = RegistryClient::new(provider.clone(), config);
 
         let mut token_store = BasicTokenStore::new();
 

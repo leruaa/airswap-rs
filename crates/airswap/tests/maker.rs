@@ -1,12 +1,12 @@
-use airswap::{Maker, MakerClient, MakerWithSupportedTokens};
+use airswap::{Config, Maker, MakerClient, MakerWithSupportedTokens, ProtocolVersion};
 use alloy::primitives::{address, U256};
 
 #[tokio::test]
 async fn test_maker() {
     let maker = MakerWithSupportedTokens {
         maker: Maker {
-            address: address!("bb289bc97591f70d8216462df40ed713011b968a"),
-            url: String::from("https://airswap-pmm-rfq-server-i24uhfiu3fh.alphalab.cc"),
+            address: address!("111bb8c3542f2b92fb41b8d913c01d3788431111"),
+            url: String::from("https://b2c2.xyz/airswap/"),
         },
         supported_tokens: vec![
             address!("a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
@@ -26,7 +26,7 @@ async fn test_maker() {
         ],
     };
 
-    let maker_client = MakerClient::new(1, maker);
+    let maker_client = MakerClient::new(1, maker, Config::new(1, ProtocolVersion::V4));
     let amount = U256::from(2000000000);
 
     let payload = maker_client

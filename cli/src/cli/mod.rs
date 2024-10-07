@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use airswap::RegistryVersion;
+use airswap::ProtocolVersion;
 use alloy::primitives::Address;
 use clap::{Args, Parser, Subcommand};
 
@@ -67,8 +67,8 @@ pub struct SellCommand {
 
 #[derive(Args, Clone)]
 pub struct Config {
-    #[arg(short, long, default_value_t)]
-    pub registry_version: RegistryVersion,
+    #[arg(short = 'v', long, default_value_t)]
+    pub protocol_version: ProtocolVersion,
 
     #[arg(long, env)]
     pub rpc: String,

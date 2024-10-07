@@ -1,5 +1,4 @@
 mod client;
-mod config;
 mod maker;
 mod maker_with_supported_tokens;
 
@@ -7,7 +6,6 @@ use std::collections::HashMap;
 
 use alloy::primitives::{address, Address};
 pub use client::{RegistryClient, RegistryError};
-pub use config::RegistryVersion;
 pub use maker::Maker;
 pub use maker_with_supported_tokens::MakerWithSupportedTokens;
 use once_cell::sync::Lazy;

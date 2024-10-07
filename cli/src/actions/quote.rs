@@ -1,4 +1,4 @@
-use airswap::{MakerClient, MakerWithSupportedTokens, RegistryClient};
+use airswap::{Config as AirswapConfig, MakerClient, MakerWithSupportedTokens, RegistryClient};
 use alloy::primitives::{utils::parse_units, Address};
 use alloy::providers::{Provider, ProviderBuilder};
 use alloy_erc20::{BasicTokenStore, TokenId, TokenStore};
@@ -51,8 +51,8 @@ impl Action for QuoteAction {
         let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
-        let registry_client =
-            RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
+        let config = AirswapConfig::new(chain_id, self.config.protocol_version);
+        let registry_client = RegistryClient::new(provider.clone(), config.clone());
 
         let mut store = BasicTokenStore::new();
 
@@ -87,9 +87,10 @@ impl Action for QuoteAction {
             let amount = self.amount.clone();
             let from_token = from_token.clone();
             let to_token = to_token.clone();
+            let config = config.clone();
 
             tokio::spawn(async move {
-                let maker_client = MakerClient::new(chain_id, m.clone());
+                let maker_client = MakerClient::new(chain_id, m.clone(), config);
                 let quote = match amount {
                     Side::Buy(amount) => {
                         let amount = parse_units(&amount.to_string(), from_token.decimals).unwrap();

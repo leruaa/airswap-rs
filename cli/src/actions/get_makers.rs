@@ -1,4 +1,4 @@
-use airswap::RegistryClient;
+use airswap::{Config as AirswapConfig, RegistryClient};
 use alloy::providers::{Provider, ProviderBuilder};
 use anyhow::Result;
 use cli_table::{
@@ -28,7 +28,8 @@ impl Action for GetMakersAction {
         let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
-        let registry = RegistryClient::new(provider, chain_id, self.config.registry_version);
+        let config = AirswapConfig::new(chain_id, self.config.protocol_version);
+        let registry = RegistryClient::new(provider, config);
 
         let makers = registry
             .get_makers_with_supported_tokens()

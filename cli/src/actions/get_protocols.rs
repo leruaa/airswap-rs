@@ -1,4 +1,4 @@
-use airswap::{MakerClient, RegistryClient};
+use airswap::{Config as AirswapConfig, MakerClient, RegistryClient};
 use alloy::providers::{Provider, ProviderBuilder};
 use alloy_erc20::{BasicTokenStore, TokenStore};
 use anyhow::Result;
@@ -27,8 +27,8 @@ impl Action for GetProtocolsAction {
     async fn execute(&self) -> Result<()> {
         let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
-        let registry_client =
-            RegistryClient::new(provider.clone(), chain_id, self.config.registry_version);
+        let config = AirswapConfig::new(chain_id, self.config.protocol_version);
+        let registry_client = RegistryClient::new(provider.clone(), config.clone());
 
         let mut token_store = BasicTokenStore::new();
 
@@ -38,7 +38,7 @@ impl Action for GetProtocolsAction {
             .get_maker_with_supported_tokens(self.maker_address.parse()?)
             .await?;
 
-        let maker_client = MakerClient::new(chain_id, maker);
+        let maker_client = MakerClient::new(chain_id, maker, config);
 
         let protocols = maker_client.get_protocols().await?;
 
