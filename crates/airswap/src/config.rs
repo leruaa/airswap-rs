@@ -11,7 +11,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(chain_id: u64, protocol_version: ProtocolVersion) -> Self {
+    pub const fn new(chain_id: u64, protocol_version: ProtocolVersion) -> Self {
         let (registry_address, registry_from_block) = match protocol_version {
             ProtocolVersion::Legacy => match chain_id {
                 1 => (
@@ -51,6 +51,18 @@ impl Config {
             swap_address,
             protocol_version,
         }
+    }
+
+    pub const fn mainnet_legacy() -> Self {
+        Self::new(1, ProtocolVersion::Legacy)
+    }
+
+    pub const fn mainnet_v4() -> Self {
+        Self::new(1, ProtocolVersion::V4)
+    }
+
+    pub const fn mainnet_v5() -> Self {
+        Self::new(1, ProtocolVersion::V5)
     }
 }
 
