@@ -3,6 +3,6 @@ members = ["cli", "crates/*"]
 resolver = "2"
 
 [workspace.dependencies]
-alloy-erc20 = "0.4"
-alloy = "0.4"
+alloy-erc20 = "0.5"
+alloy = "0.5"
 num-traits = "0.2"
