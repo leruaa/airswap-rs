@@ -54,11 +54,11 @@ where
     Ok(events)
 }
 
-pub async fn get_swap_events_stream(
-    front_end: &PubSubFrontend,
+pub async fn get_swap_events_stream<'a>(
+    front_end: &'a PubSubFrontend,
     swap_address: Address,
     id: Id,
-) -> Result<BoxStream<Result<SwapERC20Contract::SwapERC20, SwapError>>, SwapError> {
+) -> Result<BoxStream<'a, Result<SwapERC20Contract::SwapERC20, SwapError>>, SwapError> {
     let stringified_id = id.to_string();
     let req = Request {
         meta: RequestMeta::new("eth_subscribe".into(), id),

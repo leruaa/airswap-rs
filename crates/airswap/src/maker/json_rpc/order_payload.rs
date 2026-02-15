@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn sort() {
-        let mut orders = vec![
+        let mut orders = [
             OrderPayload {
                 signer_amount: U256::from(5000),
                 ..Default::default()

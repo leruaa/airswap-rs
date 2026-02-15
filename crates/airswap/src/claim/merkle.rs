@@ -142,7 +142,7 @@ fn right_child_index(i: usize) -> usize {
 }
 
 fn sibling_index(i: usize) -> usize {
-    if i % 2 == 0 {
+    if i.is_multiple_of(2) {
         // left node
         i + 1
     } else {
