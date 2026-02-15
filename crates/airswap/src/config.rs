@@ -68,9 +68,9 @@ impl Config {
 
 #[derive(Debug, Copy, Clone, Default)]
 pub enum ProtocolVersion {
-    #[default]
     Legacy,
     V4,
+    #[default]
     V5,
 }
 
