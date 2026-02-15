@@ -1,4 +1,5 @@
 use std::marker::PhantomData;
+use std::vec;
 
 use alloy::primitives::Address;
 use alloy::sol_types::{SolCall, SolEvent};
@@ -240,14 +241,27 @@ where
     }
 
     async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
-        let makers = get_makers_events::<_, _, _, RegistryV4Contract::SetServerURL>(
+        let mut makers = vec![];
+
+        let maker_addresses = call(
             &self.provider,
-            &self.config,
+            RegistryV4Contract::getStakersForProtocolCall::new(("0x02ad05d3".parse().unwrap(),)),
+            self.config.registry_address,
         )
         .await?
-        .into_iter()
-        .map(|e| normalized_maker(e.account, e.url))
-        .collect();
+        .stakers;
+
+        for a in maker_addresses {
+            let urls = call(
+                &self.provider,
+                RegistryV4Contract::getServerURLsForStakersCall::new((vec![a],)),
+                self.config.registry_address,
+            )
+            .await?
+            .urls;
+
+            makers.push(Maker::new(a, urls[0].clone()));
+        }
 
         Ok(makers)
     }
