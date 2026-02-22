@@ -8,7 +8,7 @@ use alloy::{
     providers::Provider,
     rpc::types::eth::Filter,
     sol,
-    transports::{Transport, TransportError},
+    transports::TransportError,
 };
 use async_trait::async_trait;
 use futures::{future::try_join_all, TryFutureExt};
@@ -26,10 +26,9 @@ pub trait RegistryContract {
     async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError>;
 }
 
-async fn call<P, T, N, C>(provider: &P, call: C, to: Address) -> Result<C::Return, RegistryError>
+async fn call<P, N, C>(provider: &P, call: C, to: Address) -> Result<C::Return, RegistryError>
 where
-    P: Provider<T, N>,
-    T: Transport + Clone,
+    P: Provider<N>,
     N: Network,
     C: SolCall + Send + Sync,
 {
@@ -37,19 +36,15 @@ where
         .with_input(call.abi_encode())
         .with_to(to);
 
-    let result = provider.call(&tx).await?;
-    let decoded = C::abi_decode_returns(&result, true)?;
+    let result = provider.call(tx).await?;
+    let decoded = C::abi_decode_returns(&result)?;
 
     Ok(decoded)
 }
 
-async fn get_makers_events<P, T, N, E>(
-    provider: &P,
-    config: &Config,
-) -> Result<Vec<E>, RegistryError>
+async fn get_makers_events<P, N, E>(provider: &P, config: &Config) -> Result<Vec<E>, RegistryError>
 where
-    P: Provider<T, N>,
-    T: Transport + Clone,
+    P: Provider<N>,
     N: Network,
     E: SolEvent,
 {
@@ -62,7 +57,7 @@ where
 
     set_url_events
         .into_iter()
-        .map(|log| E::decode_log_data(log.data(), true).map_err(RegistryError::from))
+        .map(|log| E::decode_log_data(log.data()).map_err(RegistryError::from))
         .collect::<Result<Vec<_>, _>>()
 }
 
@@ -84,16 +79,15 @@ fn normalized_maker(account: Address, mut url: String) -> Maker {
     Maker::new(account, url)
 }
 
-pub enum RegistryClient<P, T, N> {
-    Legacy(LegacyRegistry<P, T, N>),
-    V4(RegistryV4<P, T, N>),
+pub enum RegistryClient<P, N> {
+    Legacy(LegacyRegistry<P, N>),
+    V4(RegistryV4<P, N>),
 }
 
-impl<P, T, N> RegistryClient<P, T, N>
+impl<P, N> RegistryClient<P, N>
 where
-    P: Provider<T, N>,
+    P: Provider<N>,
     N: Network,
-    T: Transport + Clone,
 {
     pub fn new(provider: P, config: Config) -> Self {
         match config.protocol_version {
@@ -147,13 +141,13 @@ where
     }
 }
 
-pub struct LegacyRegistry<P, T, N> {
+pub struct LegacyRegistry<P, N> {
     provider: P,
     config: Config,
-    phantom: PhantomData<(T, N)>,
+    phantom: PhantomData<N>,
 }
 
-impl<P, T, N> LegacyRegistry<P, T, N> {
+impl<P, N> LegacyRegistry<P, N> {
     pub fn new(provider: P, config: Config) -> Self {
         Self {
             provider,
@@ -164,10 +158,9 @@ impl<P, T, N> LegacyRegistry<P, T, N> {
 }
 
 #[async_trait]
-impl<P, T, N> RegistryContract for LegacyRegistry<P, T, N>
+impl<P, N> RegistryContract for LegacyRegistry<P, N>
 where
-    P: Provider<T, N>,
-    T: Transport + Clone + Send + Sync,
+    P: Provider<N>,
     N: Network + Send + Sync,
 {
     async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError> {
@@ -178,41 +171,39 @@ where
         )
         .await?;
 
-        Ok(Maker::new(address, url._0))
+        Ok(Maker::new(address, url))
     }
 
     async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
-        let makers = get_makers_events::<_, _, _, LegacyRegistryContract::SetURL>(
-            &self.provider,
-            &self.config,
-        )
-        .await?
-        .into_iter()
-        .map(|e| normalized_maker(e.account, e.url))
-        .collect();
+        let makers =
+            get_makers_events::<_, _, LegacyRegistryContract::SetURL>(&self.provider, &self.config)
+                .await?
+                .into_iter()
+                .map(|e| normalized_maker(e.account, e.url))
+                .collect();
 
         Ok(makers)
     }
 
     async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError> {
-        let x = call(
+        let tokens = call(
             &self.provider,
             LegacyRegistryContract::getSupportedTokensCall::new((maker_address,)),
             self.config.registry_address,
         )
         .await?;
 
-        Ok(x.tokenList)
+        Ok(tokens)
     }
 }
 
-pub struct RegistryV4<P, T, N> {
+pub struct RegistryV4<P, N> {
     provider: P,
     config: Config,
-    phantom: PhantomData<(T, N)>,
+    phantom: PhantomData<N>,
 }
 
-impl<P, T, N> RegistryV4<P, T, N> {
+impl<P, N> RegistryV4<P, N> {
     pub fn new(provider: P, config: Config) -> Self {
         Self {
             provider,
@@ -223,10 +214,9 @@ impl<P, T, N> RegistryV4<P, T, N> {
 }
 
 #[async_trait]
-impl<P, T, N> RegistryContract for RegistryV4<P, T, N>
+impl<P, N> RegistryContract for RegistryV4<P, N>
 where
-    P: Provider<T, N>,
-    T: Transport + Clone + Send + Sync,
+    P: Provider<N>,
     N: Network + Send + Sync,
 {
     async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError> {
@@ -237,7 +227,7 @@ where
         )
         .await?;
 
-        Ok(Maker::new(address, url._0))
+        Ok(Maker::new(address, url))
     }
 
     async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
@@ -248,8 +238,7 @@ where
             RegistryV4Contract::getStakersForProtocolCall::new(("0x02ad05d3".parse().unwrap(),)),
             self.config.registry_address,
         )
-        .await?
-        .stakers;
+        .await?;
 
         for a in maker_addresses {
             let urls = call(
@@ -257,8 +246,7 @@ where
                 RegistryV4Contract::getServerURLsForStakersCall::new((vec![a],)),
                 self.config.registry_address,
             )
-            .await?
-            .urls;
+            .await?;
 
             makers.push(Maker::new(a, urls[0].clone()));
         }
@@ -267,14 +255,14 @@ where
     }
 
     async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError> {
-        let x = call(
+        let tokens = call(
             &self.provider,
             RegistryV4Contract::getTokensForStakerCall::new((maker_address,)),
             self.config.registry_address,
         )
         .await?;
 
-        Ok(x.tokenList)
+        Ok(tokens)
     }
 }
 

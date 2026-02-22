@@ -25,7 +25,7 @@ impl GetProtocolsAction {
 #[async_trait::async_trait]
 impl Action for GetProtocolsAction {
     async fn execute(&self) -> Result<()> {
-        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
+        let provider = ProviderBuilder::new().connect_http(self.config.rpc.parse()?);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let config = AirswapConfig::new(chain_id, self.config.protocol_version);
         let registry_client = RegistryClient::new(provider.clone(), config.clone());

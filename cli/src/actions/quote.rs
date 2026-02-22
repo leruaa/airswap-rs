@@ -48,7 +48,7 @@ impl QuoteAction {
 #[async_trait::async_trait]
 impl Action for QuoteAction {
     async fn execute(&self) -> Result<()> {
-        let provider = ProviderBuilder::new().on_http(self.config.rpc.parse()?);
+        let provider = ProviderBuilder::new().connect_http(self.config.rpc.parse()?);
         let provider = Arc::new(provider);
         let chain_id = provider.get_chain_id().await?.to_u64().unwrap();
         let config = AirswapConfig::new(chain_id, self.config.protocol_version);

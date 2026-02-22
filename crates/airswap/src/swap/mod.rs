@@ -3,7 +3,7 @@ use std::sync::Arc;
 use alloy::primitives::Address;
 use alloy::{
     network::Network,
-    providers::{Provider, RootProvider},
+    providers::Provider,
     pubsub::PubSubFrontend,
     rpc::{
         json_rpc::{ErrorPayload, Id, Request, RequestMeta, ResponsePayload},
@@ -14,7 +14,7 @@ use alloy::{
     },
     sol,
     sol_types::SolEvent,
-    transports::{Transport, TransportError},
+    transports::TransportError,
 };
 use futures::{
     stream::{self, BoxStream},
@@ -25,16 +25,16 @@ use tracing::error;
 
 sol!(SwapERC20Contract, "abi/swap_erc20.json");
 
-pub async fn get_swap_events<B, T, N>(
-    provider: Arc<RootProvider<T, N>>,
+pub async fn get_swap_events<B, P, N>(
+    provider: Arc<P>,
     swap_address: Address,
     from_block: B,
     to_block: Option<B>,
 ) -> Result<Vec<SwapERC20Contract::SwapERC20>, SwapError>
 where
     B: Into<BlockNumberOrTag>,
+    P: Provider<N>,
     N: Network,
-    T: Transport + Clone,
 {
     let filter = Filter::new()
         .from_block(from_block)
@@ -46,7 +46,7 @@ where
     let mut events = vec![];
 
     for log in swap_event_logs.into_iter().filter(|l| !l.removed) {
-        let swap_event = SwapERC20Contract::SwapERC20::decode_log_data(log.data(), true)?;
+        let swap_event = SwapERC20Contract::SwapERC20::decode_log_data(log.data())?;
 
         events.push(swap_event);
     }
@@ -101,7 +101,7 @@ pub async fn get_swap_events_stream<'a>(
     let stream = stream
         .map(|value| serde_json::from_str::<Log>(value.get()).map_err(Into::into))
         .and_then(|log| async move {
-            SwapERC20Contract::SwapERC20::decode_log_data(log.data(), true).map_err(Into::into)
+            SwapERC20Contract::SwapERC20::decode_log_data(log.data()).map_err(Into::into)
         });
 
     Ok(stream.boxed())
