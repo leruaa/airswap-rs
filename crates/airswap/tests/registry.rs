@@ -12,7 +12,7 @@ async fn test_registry() {
     dotenv().ok();
 
     let eth_rpc = env::var("ETH_RPC_URL").unwrap();
-    let provider = ProviderBuilder::new().on_http(eth_rpc.parse().unwrap());
+    let provider = ProviderBuilder::new().connect_http(eth_rpc.parse().unwrap());
     let config = Config::new(1, ProtocolVersion::Legacy);
     let registry_client = RegistryClient::new(Arc::new(provider), config);
 

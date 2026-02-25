@@ -2,7 +2,7 @@ use std::{collections::HashMap, env, fs::File};
 
 use airswap::{
     claim::{GroupedProposal, MerkleTree, ProposalGroup},
-    pool::{rootsByTreeReturn, PoolContractInstance},
+    pool::PoolContractInstance,
 };
 use alloy::providers::ProviderBuilder;
 use alloy::{
@@ -25,14 +25,14 @@ async fn test_votes_for_proposals() {
 
     let pool_instance = PoolContractInstance::new(
         address!("bbcec987E4C189FCbAB0a2534c77b3ba89229F11"),
-        ProviderBuilder::new().on_http(eth_rpc.parse().unwrap()),
+        ProviderBuilder::new().connect_http(eth_rpc.parse().unwrap()),
     );
 
     let tree = group.hash();
 
     println!("tree: {}", tree);
 
-    let rootsByTreeReturn { _0: root } = pool_instance.rootsByTree(tree).call().await.unwrap();
+    let root = pool_instance.rootsByTree(tree).call().await.unwrap();
 
     println!("root: {}", root);
 
@@ -55,6 +55,6 @@ async fn test_votes_for_proposals() {
             .await
             .unwrap();
 
-        assert!(result._0);
+        assert!(result);
     }
 }
