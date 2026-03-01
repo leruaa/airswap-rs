@@ -34,7 +34,7 @@ pub enum Commands {
 
 #[derive(Subcommand)]
 pub enum RegistryCommands {
-    Makers,
+    Makers { symbols: Vec<String> },
 }
 
 #[derive(Clone, Subcommand)]
@@ -88,9 +88,9 @@ impl From<&Cli> for BoxedAction {
     fn from(cli: &Cli) -> Self {
         match &cli.command {
             Commands::Registry(command) => match command {
-                RegistryCommands::Makers => {
-                    BoxedAction(Box::new(GetMakersAction::new(cli.config.clone())))
-                }
+                RegistryCommands::Makers { symbols } => BoxedAction(Box::new(
+                    GetMakersAction::new(symbols.clone(), cli.config.clone()),
+                )),
             },
             Commands::Maker { address, command } => match command {
                 MakerCommands::Protocols => BoxedAction(Box::new(GetProtocolsAction::new(
