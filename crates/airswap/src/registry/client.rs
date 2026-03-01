@@ -1,12 +1,12 @@
+use std::collections::HashSet;
 use std::marker::PhantomData;
 use std::vec;
 
 use alloy::primitives::Address;
-use alloy::sol_types::{SolCall, SolEvent};
+use alloy::sol_types::SolCall;
 use alloy::{
     network::{Network, TransactionBuilder},
     providers::Provider,
-    rpc::types::eth::Filter,
     sol,
     transports::TransportError,
 };
@@ -22,7 +22,7 @@ sol!(RegistryV4Contract, "abi/registry_v4.json");
 #[async_trait]
 pub trait RegistryContract {
     async fn get_maker(&self, address: Address) -> Result<Maker, RegistryError>;
-    async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError>;
+    async fn get_makers(&self, token: Address) -> Result<HashSet<Maker>, RegistryError>;
     async fn get_tokens(&self, maker_address: Address) -> Result<Vec<Address>, RegistryError>;
 }
 
@@ -40,25 +40,6 @@ where
     let decoded = C::abi_decode_returns(&result)?;
 
     Ok(decoded)
-}
-
-async fn get_makers_events<P, N, E>(provider: &P, config: &Config) -> Result<Vec<E>, RegistryError>
-where
-    P: Provider<N>,
-    N: Network,
-    E: SolEvent,
-{
-    let filter = Filter::new()
-        .from_block(config.registry_from_block)
-        .address(config.registry_address)
-        .event(E::SIGNATURE);
-
-    let set_url_events = provider.get_logs(&filter).await?;
-
-    set_url_events
-        .into_iter()
-        .map(|log| E::decode_log_data(log.data()).map_err(RegistryError::from))
-        .collect::<Result<Vec<_>, _>>()
 }
 
 fn normalized_maker(account: Address, mut url: String) -> Maker {
@@ -79,6 +60,7 @@ fn normalized_maker(account: Address, mut url: String) -> Maker {
     Maker::new(account, url)
 }
 
+#[derive(Clone)]
 pub enum RegistryClient<P, N> {
     Legacy(LegacyRegistry<P, N>),
     V4(RegistryV4<P, N>),
@@ -113,10 +95,10 @@ where
         Ok(MakerWithSupportedTokens::new(maker, supported_tokens))
     }
 
-    pub async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
+    pub async fn get_makers(&self, token: Address) -> Result<HashSet<Maker>, RegistryError> {
         match self {
-            RegistryClient::Legacy(registry) => registry.get_makers().await,
-            RegistryClient::V4(registry) => registry.get_makers().await,
+            RegistryClient::Legacy(registry) => registry.get_makers(token).await,
+            RegistryClient::V4(registry) => registry.get_makers(token).await,
         }
     }
 
@@ -129,8 +111,9 @@ where
 
     pub async fn get_makers_with_supported_tokens(
         &self,
+        token: Address,
     ) -> Result<Vec<MakerWithSupportedTokens>, RegistryError> {
-        let futures = self.get_makers().await?.into_iter().map(|m| {
+        let futures = self.get_makers(token).await?.into_iter().map(|m| {
             self.get_tokens(m.address)
                 .map_ok(|supported_tokens| MakerWithSupportedTokens::new(m, supported_tokens))
         });
@@ -141,6 +124,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct LegacyRegistry<P, N> {
     provider: P,
     config: Config,
@@ -174,13 +158,26 @@ where
         Ok(Maker::new(address, url))
     }
 
-    async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
-        let makers =
-            get_makers_events::<_, _, LegacyRegistryContract::SetURL>(&self.provider, &self.config)
-                .await?
-                .into_iter()
-                .map(|e| normalized_maker(e.account, e.url))
-                .collect();
+    async fn get_makers(&self, token: Address) -> Result<HashSet<Maker>, RegistryError> {
+        let mut makers = HashSet::new();
+
+        let maker_addresses = call(
+            &self.provider,
+            LegacyRegistryContract::getStakersForTokenCall::new((token,)),
+            self.config.registry_address,
+        )
+        .await?;
+
+        for a in maker_addresses {
+            let urls = call(
+                &self.provider,
+                LegacyRegistryContract::getURLsForStakersCall::new((vec![a],)),
+                self.config.registry_address,
+            )
+            .await?;
+
+            makers.insert(normalized_maker(a, urls[0].clone()));
+        }
 
         Ok(makers)
     }
@@ -197,6 +194,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct RegistryV4<P, N> {
     provider: P,
     config: Config,
@@ -230,12 +228,12 @@ where
         Ok(Maker::new(address, url))
     }
 
-    async fn get_makers(&self) -> Result<Vec<Maker>, RegistryError> {
-        let mut makers = vec![];
+    async fn get_makers(&self, token: Address) -> Result<HashSet<Maker>, RegistryError> {
+        let mut makers = HashSet::new();
 
         let maker_addresses = call(
             &self.provider,
-            RegistryV4Contract::getStakersForProtocolCall::new(("0x02ad05d3".parse().unwrap(),)),
+            RegistryV4Contract::getStakersForTokenCall::new((token,)),
             self.config.registry_address,
         )
         .await?;
@@ -248,7 +246,7 @@ where
             )
             .await?;
 
-            makers.push(Maker::new(a, urls[0].clone()));
+            makers.insert(normalized_maker(a, urls[0].clone()));
         }
 
         Ok(makers)

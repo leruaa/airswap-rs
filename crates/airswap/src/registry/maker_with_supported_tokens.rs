@@ -4,7 +4,7 @@ use alloy::primitives::Address;
 
 use crate::Maker;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MakerWithSupportedTokens {
     pub maker: Maker,
     pub supported_tokens: Vec<Address>,

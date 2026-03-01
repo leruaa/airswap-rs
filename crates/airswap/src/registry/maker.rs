@@ -4,7 +4,7 @@ use alloy::primitives::Address;
 
 use crate::{registry::KNOWN_MAKERS, MakerWithSupportedTokens};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Maker {
     pub address: Address,
     pub url: String,
