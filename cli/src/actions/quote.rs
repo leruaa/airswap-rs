@@ -67,9 +67,15 @@ impl Action for QuoteAction {
         let to_token = store
             .get(chain_id, TokenId::Symbol(self.to_symbol.clone()))
             .ok_or(anyhow!("The token {} can't be found", &self.to_symbol))?;
-        let from_makers = registry_client.get_makers(from_token.address).await?;
-        let to_makers = registry_client.get_makers(to_token.address).await?;
-        let makers = from_makers.intersection(&to_makers).cloned();
+
+        let makers = if let Some(maker_address) = self.maker {
+            let maker = registry_client.get_maker(maker_address).await?;
+            vec![maker]
+        } else {
+            let from_makers = registry_client.get_makers(from_token.address).await?;
+            let to_makers = registry_client.get_makers(to_token.address).await?;
+            from_makers.intersection(&to_makers).cloned().collect()
+        };
 
         let tasks = makers.into_iter().map(|m| {
             let registry_client = registry_client.clone();
